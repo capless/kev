@@ -1,0 +1,8 @@
+Django==1.6.5
+cloudant==0.5.9
+coverage==3.7.1
+django-coverage==1.2.4
+futures==2.1.6
+lucene-querybuilder==0.1.2
+requests==2.3.0
+requests-futures==0.9.4

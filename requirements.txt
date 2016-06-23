@@ -1,0 +1,3 @@
+redis
+elasticsearch-py
+lucene-querybuilder==0.2
