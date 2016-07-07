@@ -1,5 +1,7 @@
 import os
 import sys
+import importlib
+
 
 def import_mod(imp):
     '''
@@ -16,15 +18,10 @@ def import_util(imp):
     a string.
     @param imp:
     '''
-    try:
-        mod_name,sep,obj_name = imp.rpartition('.')
-    except AttributeError:
-        return None
-    __import__(mod_name,globals(),locals())
-    imp_mod = sys.modules[mod_name]
-    imp_obj = imp_mod.__dict__[obj_name]
-    return imp_obj
 
+    mod_name,obj_name = imp.rsplit('.',1)
+    mod = importlib.import_module(mod_name)
+    return getattr(mod,obj_name)
 
 def env(key, default=None):
     """Retrieves env vars and makes Python boolean replacements"""

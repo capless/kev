@@ -48,12 +48,9 @@ class QuerySetMixin(object):
         
     def count(self):
         return len(list(self.evaluate()))
-        
 
     def delete(self):
-        doc_set = self.evaluate()
-
-        return self._db.bulk_docs(*doc_ids)
+        pass
             
     def __nonzero__(self):
         self._fetch_all()
@@ -153,8 +150,9 @@ class SearchSet(QuerySetMixin):
         
         if error:
             raise QueryError(json_data.get('reason'))
+        doc_set = list()
         if doc:
-            doc_set = list()
+
             for i in docs:
                 if not self._include_docs:
                     i['fields']['_id'] = i.pop('id')

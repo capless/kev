@@ -28,7 +28,7 @@ setup(
     packages=find_packages(),
     
     license='Apache',
-    install_requires=['redis','elasticsearch-py','lucene-querybuilder'],
+    install_requires=['redis','elasticsearch','boto3'],
     include_package_data=True,
     zip_safe=False,
 )
