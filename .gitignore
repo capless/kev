@@ -20,10 +20,11 @@ lib64/
 parts/
 sdist/
 var/
+.idea/
 *.egg-info/
 .installed.cfg
 *.egg
-
+*.ipynb
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
