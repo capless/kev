@@ -28,7 +28,7 @@ setup(
     packages=find_packages(),
     
     license='Apache',
-    install_requires=['redis','elasticsearch','boto3'],
+    install_requires=['redis==2.10.5','elasticsearch==2.3.0','boto3==1.3.1'],
     include_package_data=True,
     zip_safe=False,
 )
