@@ -13,7 +13,7 @@ K.E.V. (Keys, ElasticSearch, and Values) is a Python ORM for key-value stores an
 setup(
     name='redes',
     version=version,
-    description="""This project should make it easier for devs to use Redis+ElasticSearch with Python.""",
+    description="""K.E.V. (Keys, ElasticSearch, and Values) is a Python ORM for key-value stores and ElasticSearch. Currently supported backends are Redis and a S3/Redis hybrid backend.""",
     long_description=LONG_DESCRIPTION,
     classifiers=[
         "Programming Language :: Python",
