@@ -4,11 +4,10 @@ version = '0.2'
  
 LONG_DESCRIPTION = """
 =======================
-Redes
+Kev
 =======================
 
-A declarative syntax Python ORM for Redis+ElasticSearch based on the official Redis and ElasticSearch Python libraries.
-
+K.E.V. (Keys, ElasticSearch, and Values) is a Python ORM for key-value stores and ElasticSearch. Currently supported backends are Redis and a S3/Redis hybrid backend.
 """
  
 setup(
@@ -21,7 +20,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Environment :: Web Environment",
     ],
-    keywords='cloudant, couchdb, django',
+    keywords='redis, elasticsearch, s3, key-value',
     author='Brian Jinwright',
     author_email='opensource@ipoots.com',
     maintainer='Brian Jinwright',
