@@ -23,16 +23,6 @@ def import_util(imp):
     mod = importlib.import_module(mod_name)
     return getattr(mod,obj_name)
 
-def env(key, default=None):
-    """Retrieves env vars and makes Python boolean replacements"""
-    val = os.getenv(key, default)
- 
-    if val == 'True':
-        val = True
-    elif val == 'False':
-        val = False
-    return val
-
 def get_doc_type(klass):
     if hasattr(klass.Meta,'doc_type'):
         if klass.Meta.doc_type is not None:

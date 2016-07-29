@@ -12,7 +12,7 @@ from .validators import (RequiredValidator,StringValidator,
                          MaxLengthValidator,MinLengthValidator,
                          IntegerValidator,MaxValueValidator,
                          MinValueValidator,FloatValidator,
-                         DateValidator,DateTimeValidator,
+                         DateValidator,DateTimeValidator,BooleanValidator
                          )
 
 class VariableMixin(object):
@@ -26,11 +26,11 @@ class CharVariableMixin(VariableMixin):
         VariableMixin.get_validators(self)
         self.validators.append(StringValidator())
         if self.kwargs.get('min_length'):
-            self.validators.append(MaxLengthValidator(
+            self.validators.append(MinLengthValidator(
                 self.kwargs.get('min_length')))
             
         if self.kwargs.get('max_length'):
-            self.validators.append(MinLengthValidator(
+            self.validators.append(MaxLengthValidator(
                 self.kwargs.get('max_length')))
         
 class NumericVariableMixin(VariableMixin):    
@@ -70,13 +70,20 @@ class DateTimeMixin(VariableMixin):
         self.validators.insert(0,DateTimeValidator())
         
 
-class BaseProperty(object):
+class BooleanMixin(VariableMixin):
+
+    def get_validators(self):
+        self.validators = [BooleanValidator()]
+
+
+class BaseProperty(VariableMixin,object):
     
     def __init__(
         self,
         default_value=None,
         required=True,
         index=False,
+        unique=False,
         validators=[],
         verbose_name=None,
         **kwargs
@@ -84,20 +91,24 @@ class BaseProperty(object):
         self.default_value = default_value
         self.required = required
         self.index = index
+        self.unique = unique
+        if unique:
+            self.index = True
         self.kwargs = kwargs
         self.validators = list()
         self.get_validators()
-        
+        self.validators = set(self.validators)
         if verbose_name:
             self.verbose_name = verbose_name
             
     def validate(self,value,key):
+        if not value and type(self.get_default_value()) != type(None):
+            value = self.get_default_value()
         for i in self.validators:
             i.validate(value,key)
             
     def get_default_value(self):
         """ return default value """
-
         default = self.default_value
         if callable(default):
             default = default()
@@ -115,6 +126,8 @@ class CharProperty(CharVariableMixin,BaseProperty):
         return unicode(value)
     
     def get_python_value(self, value):
+        if not value:
+            return None
         return unicode(value)
 
 class IntegerProperty(IntegerVariableMixin,BaseProperty):
@@ -123,6 +136,8 @@ class IntegerProperty(IntegerVariableMixin,BaseProperty):
         return int(value)
     
     def get_python_value(self, value):
+        if not value:
+            return None
         return int(value)
     
     
@@ -132,8 +147,22 @@ class FloatProperty(FloatVariableMixin,BaseProperty):
         return float(value)
     
     def get_python_value(self, value):
+        if not value:
+            return None
         return float(value)
-    
+
+
+class BooleanProperty(BooleanMixin,BaseProperty):
+
+    def get_db_value(self,value):
+        return int(value)
+
+    def get_python_value(self,value):
+        if not value:
+            return False
+        return bool(int(value))
+
+
 class DateProperty(DateMixin,BaseProperty):
 
     def __init__(
@@ -162,6 +191,8 @@ class DateProperty(DateMixin,BaseProperty):
         return default
     
     def get_python_value(self, value):
+        if not value:
+            return None
         if isinstance(value, basestring):
             try:
                 value = datetime.date(*time.strptime(value, '%Y-%m-%d')[:3])
@@ -174,9 +205,32 @@ class DateProperty(DateMixin,BaseProperty):
         if value is None:
             return value
         return value.isoformat()
-    
-class DateTimeProperty(DateTimeMixin,DateProperty):
-    
+
+
+class DateTimeProperty(DateTimeMixin,BaseProperty):
+
+    def __init__(
+            self,
+            default_value=None,
+            required=True,
+            validators=[],
+            verbose_name=None,
+            auto_now=False,
+            auto_now_add=False,
+            **kwargs):
+
+        super(DateTimeProperty, self).__init__(default_value=default_value,
+                                           required=required, validators=validators,
+                                           verbose_name=verbose_name, **kwargs)
+        self.auto_now = auto_now
+        self.auto_now_add = auto_now_add
+
+    def get_default_value(self):
+        default = self.default_value
+        if self.auto_now or self.auto_now_add:
+            return self.now()
+        return default
+
     def get_python_value(self, value):
         if isinstance(value, basestring):
             try:
@@ -189,6 +243,8 @@ class DateTimeProperty(DateTimeMixin,DateProperty):
         return value
 
     def get_db_value(self, value):
+        if not value:
+            return None
         if self.auto_now:
             value = self.now()
 
