@@ -1,6 +1,7 @@
 from .properties import BaseProperty
 from .query import QueryManager
 
+BUILTIN_DOC_ATTRS = ('_id','_doc_type')
 
 def get_declared_variables(bases, attrs):
     properties = {}
@@ -29,13 +30,14 @@ class DeclarativeVariablesMetaclass(type):
 
         return new_class
 
+
 class BaseDocument(object):
     """
-    Base class for all CloudantDB Documents classes.
+    Base class for all Kev Documents classes.
     """
 
     def __init__(self,**kwargs):
-        self._doc = kwargs
+        self._doc = self.process_doc_kwargs(kwargs)
         self._db = self.get_db()
         if self._doc.has_key('_id'):
             self.set_pk(self._doc['_id'])
@@ -48,18 +50,32 @@ class BaseDocument(object):
     
     def __setattr__(self,name,value):
         if name in self._base_properties.keys():
-            if name in self.get_indexed_props():
-                if value != self._doc[name] and self._doc.get(name) != None:
+            if name in self.get_indexed_props() and value \
+                    != self._doc.get(name) and self._doc.get(name) != None:
                     self._index_change_list.append(
                         self.get_index_name(name,self._doc[name]))
             self._doc[name] = value
         else:
             super(BaseDocument,self).__setattr__(name,value)
 
+    def process_doc_kwargs(self,kwargs):
+        doc = {}
+        for key,prop in self._base_properties.items():
+            try:
+                value = prop.get_python_value(kwargs.get(key) or prop.get_default_value())
+            except ValueError:
+                value = kwargs.get(key) or prop.get_default_value()
+            if value:
+                doc[key] = value
+        for i in BUILTIN_DOC_ATTRS:
+            if kwargs.get(i):
+                doc[i] = kwargs[i]
+        return doc
+
     def set_pk(self, pk):
         self._doc['_id'] = pk
-        self.id = pk
-        self._id = self.id
+        self._id = pk
+        self.id = self._db.parse_id(pk)
         self.pk = self.id
 
     def get_indexed_props(self):
@@ -68,6 +84,13 @@ class BaseDocument(object):
             if prop.index == True:
                 index_list.append(key)
         return index_list
+
+    def get_unique_props(self):
+        unique_list = []
+        for key, prop in self._base_properties.items():
+            if prop.unique == True:
+                unique_list.append(key)
+        return unique_list
 
     def get_indexes(self):
         index_list = []
@@ -108,6 +131,9 @@ class BaseDocument(object):
         ins = cls()
         return ins._db.all(cls)
 
+    def flush_db(self):
+        self._db.flush_db()
+
     def delete(self):
         self._db.delete(self)
 
@@ -118,6 +144,7 @@ class BaseDocument(object):
     class Meta:
         use_db = 'default'
         handler = None
+
         
 class Document(BaseDocument):
     __metaclass__ = DeclarativeVariablesMetaclass
