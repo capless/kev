@@ -48,6 +48,10 @@ class TestDocument(Document):
     no_subscriptions = IntegerProperty(default_value=1,index=True,min_value=1,max_value=20)
     gpa = FloatProperty()
 
+    def __unicode__(self):
+        return self.name
+        
+
     class Meta:
         use_db = 's3'
         handler = kev_handler
