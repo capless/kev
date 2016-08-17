@@ -3,6 +3,31 @@ from .exceptions import QueryError
 REPR_OUTPUT_SIZE = 20
 
 
+def combine_list(a,b):
+    if isinstance(a,(set,tuple,list)):
+        a = list(a)
+    else:
+        a = [a]
+    if isinstance(b,(set,tuple,list)):
+        b = list(b)
+    else:
+        b = [b]
+    a.extend(b)
+    return a
+
+def combine_dicts(a, b, op=combine_list):
+    z = a.copy()
+    z.update(b)
+    z.update([(k, op(a[k], b[k])) for k in set(b) & set(a)])
+    doc_type = z.get('_doc_type')
+    if isinstance(doc_type,list):
+        doc_type = set(doc_type)
+        if len(doc_type) == 1:
+            doc_type = doc_type[0]
+            z['_doc_type'] = doc_type
+    return z
+
+
 class QuerySetMixin(object):
     query_type = None
 
@@ -16,8 +41,8 @@ class QuerySetMixin(object):
         if q and parent_q:
             self.q = self.combine_qs()
 
-    def combine_qs(self):  # pragma: no cover
-        raise NotImplementedError    
+    def combine_qs(self):
+        return combine_dicts(self.parent_q, self.q)
 
     def prepare_filters(self):
         filter_list = []
@@ -65,31 +90,6 @@ class QuerySetMixin(object):
         raise NotImplementedError
 
 
-def combine_list(a,b):
-    if isinstance(a,(set,tuple,list)):
-        a = list(a)
-    else:
-        a = [a]
-    if isinstance(b,(set,tuple,list)):
-        b = list(b)
-    else:
-        b = [b]
-    a.extend(b)
-    return a
-
-def combine_dicts(a, b, op=combine_list):
-    z = a.copy()
-    z.update(b)
-    z.update([(k, op(a[k], b[k])) for k in set(b) & set(a)])
-    doc_type = z.get('_doc_type')
-    if isinstance(doc_type,list):
-        doc_type = set(doc_type)
-        if len(doc_type) == 1:
-            doc_type = doc_type[0]
-            z['_doc_type'] = doc_type
-    return z
-    
-    
 class QuerySet(QuerySetMixin):
 
     def filter(self,q):
@@ -103,14 +103,11 @@ class QuerySet(QuerySetMixin):
             raise QueryError('This query did not return a result.')
         return qs[0]
 
-    def combine_qs(self):
-        return combine_dicts(self.parent_q, self.q)
-
     def evaluate(self):
         filters_list = self.prepare_filters()
         return self._doc_class.get_db().evaluate(filters_list,self._doc_class)
 
-    
+
 class QueryManager(object):
     
     def __init__(self,cls):
@@ -118,4 +115,3 @@ class QueryManager(object):
         
         self.filter = QuerySet(self._doc_class).filter
         self.get = QuerySet(self._doc_class).get
-

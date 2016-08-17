@@ -4,14 +4,14 @@ from pip.req import parse_requirements
 install_reqs = parse_requirements('requirements.txt', session=False)
 
 
-version = '0.1'
+version = '0.2.0'
  
 LONG_DESCRIPTION = """
 =======================
 Kev
 =======================
 
-K.E.V. (Keys, ElasticSearch, and Values) is a Python ORM for key-value stores and ElasticSearch. Currently supported
+K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores. Currently supported
 backends are Redis and a S3/Redis hybrid backend.
 
 """
@@ -19,7 +19,7 @@ backends are Redis and a S3/Redis hybrid backend.
 setup(
     name='kev',
     version=version,
-    description="""K.E.V. (Keys, ElasticSearch, and Values) is a Python ORM for key-value stores and ElasticSearch. \
+    description="""K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores. \
         Currently supported backends are Redis and a S3/Redis hybrid backend.""",
     long_description=LONG_DESCRIPTION,
     classifiers=[
@@ -27,7 +27,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Environment :: Web Environment",
     ],
-    keywords='redis, s3, elasticsearch',
+    keywords='redis, s3',
     author='Brian Jinwright',
     author_email='opensource@ipoots.com',
     maintainer='Brian Jinwright',
