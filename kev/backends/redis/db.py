@@ -7,11 +7,11 @@ from kev.exceptions import DocNotFoundError
 
 class RedisDB(DocDB):
 
-    conn_class = redis.StrictRedis
+    db_class = redis.StrictRedis
     backend_id = 'redis'
 
     def __init__(self,**kwargs):
-        self._db = self._indexer = self.conn_class(kwargs['host'],port=kwargs['port'])
+        self._db = self._indexer = self.db_class(kwargs['host'],port=kwargs['port'])
 
     def create_pk(self,doc_obj):
         pk = self._indexer.incr('{0}:{1}:id._pk'.format(self.backend_id,doc_obj.__class__.__name__.lower()))

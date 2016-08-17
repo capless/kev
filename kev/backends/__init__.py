@@ -3,7 +3,8 @@ from kev.utils import get_doc_type
 
 
 class DocDB(object):
-    conn_class = None
+    db_class = None
+    indexer_class = None
     backend_id = None
 
     def save(self,doc_obj):

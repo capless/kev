@@ -6,8 +6,8 @@ from kev.backends.redis.db import RedisDB
 
 class S3DB(RedisDB):
 
-    conn_class = boto3.resource
-    cache_class = redis.StrictRedis
+    db_class = boto3.resource
+    indexer_class = redis.StrictRedis
     backend_id = 's3'
 
     def __init__(self,**kwargs):
@@ -18,7 +18,7 @@ class S3DB(RedisDB):
         self._db = boto3.resource('s3')
         self.bucket = kwargs['bucket']
 
-        self._indexer = self.cache_class(**kwargs['indexer'])
+        self._indexer = self.indexer_class(**kwargs['indexer'])
 
     #CRUD Operation Methods
 
