@@ -43,6 +43,11 @@ class BaseDocument(object):
             self.set_pk(self._doc['_id'])
         self._index_change_list = []
 
+    def __repr__(self):
+        return '<{class_name}: {uni}:{id} >'.format(
+            class_name=self.__class__.__name__, uni=self.__unicode__(),
+                                                    id=self.pk)
+    
     def __getattr__(self,name):
         if name in self._base_properties.keys():
             prop = self._base_properties[name]
