@@ -6,9 +6,11 @@ kev_handler = KevHandler({
     's3':{
         'backend':'kev.backends.s3.db.S3DB',
         'connection':{
-            'redis_host':env('REDIS_HOST_TEST'),
-            'redis_port':env('REDIS_PORT_TEST'),
             'bucket':env('S3_BUCKET_TEST'),
+            'indexer':{
+                'host':env('REDIS_HOST_TEST'),
+                'port':env('REDIS_PORT_TEST'),
+            }
         }
     },
     'redis': {

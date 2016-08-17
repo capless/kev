@@ -1,7 +1,8 @@
 import redis
 
 from kev.backends import DocDB
-from kev.exceptions import DocSaveError, DocNotFoundError
+from kev.exceptions import DocNotFoundError
+
 
 
 class RedisDB(DocDB):
@@ -10,10 +11,10 @@ class RedisDB(DocDB):
     backend_id = 'redis'
 
     def __init__(self,**kwargs):
-        self._redis = redis.StrictRedis(**kwargs)
+        self._db = self._indexer = self.conn_class(kwargs['host'],port=kwargs['port'])
 
     def create_pk(self,doc_obj):
-        pk = self._redis.incr('{0}:{1}:id._pk'.format(self.backend_id,doc_obj.__class__.__name__.lower()))
+        pk = self._indexer.incr('{0}:{1}:id._pk'.format(self.backend_id,doc_obj.__class__.__name__.lower()))
         doc_obj.set_pk('{0}:id:{1}'.format(doc_obj.__class__.__name__.lower(), pk))
         return doc_obj
 
@@ -21,7 +22,7 @@ class RedisDB(DocDB):
 
     def save(self,doc_obj):
         doc_obj, doc = self._save(doc_obj)
-        pipe = self._redis.pipeline()
+        pipe = self._db.pipeline()
         pipe.hmset(doc_obj._id, doc)
 
         pipe = self.add_to_model_set(doc_obj,pipe)
@@ -32,7 +33,7 @@ class RedisDB(DocDB):
         return doc_obj
 
     def delete(self,doc_obj):
-        pipe = self._redis.pipeline()
+        pipe = self._db.pipeline()
         pipe.delete(doc_obj._doc['_id'])
         pipe = self.remove_from_model_set(doc_obj,pipe)
         doc_obj._index_change_list = doc_obj.get_indexes()
@@ -41,22 +42,22 @@ class RedisDB(DocDB):
 
     def all(self,cls):
         klass = cls()
-        id_list = self._redis.smembers('{0}:all'.format(
+        id_list = self._db.smembers('{0}:all'.format(
             klass.get_class_name()))
-        pipe = self._redis.pipeline()
+        pipe = self._db.pipeline()
         for id in id_list:
             pipe.hgetall(id)
         return [cls(**doc) for doc in pipe.execute()]
 
     def get(self, doc_obj, doc_id):
 
-        doc = self._redis.hgetall(doc_obj.get_doc_id(doc_id))
+        doc = self._db.hgetall(doc_obj.get_doc_id(doc_id))
         if len(doc.keys()) == 0:
             raise DocNotFoundError
         return doc_obj.__class__(**doc)
 
     def flush_db(self):
-        self._redis.flushdb()
+        self._db.flushdb()
 
     #Indexing Methods
 
@@ -85,10 +86,10 @@ class RedisDB(DocDB):
 
     def evaluate(self, filters_list, doc_class):
         if len(filters_list) == 1:
-            id_list = self._redis.smembers(filters_list[0])
+            id_list = self._db.smembers(filters_list[0])
         else:
-            id_list = self._redis.sinter(*filters_list)
-        pipe = self._redis.pipeline()
+            id_list = self._db.sinter(*filters_list)
+        pipe = self._db.pipeline()
         for id in id_list:
             pipe.hgetall(id)
         return [doc_class(**doc) for doc in pipe.execute()]

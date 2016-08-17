@@ -108,15 +108,6 @@ class QuerySet(QuerySetMixin):
         return self._doc_class.get_db().evaluate(filters_list,self._doc_class)
 
 
-class Search(QuerySetMixin):
-
-    def search(self,q):
-        return Search(self._doc_class,q,self.q)
-
-    def evaluate(self):
-        filters_list = self.prepare_filters()
-        return self._doc_class.get_db().evaluate_search(filters_list,self._doc_class)
-    
 class QueryManager(object):
     
     def __init__(self,cls):
@@ -124,4 +115,3 @@ class QueryManager(object):
         
         self.filter = QuerySet(self._doc_class).filter
         self.get = QuerySet(self._doc_class).get
-        self.search = Search(self._doc_class).search
