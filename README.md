@@ -6,6 +6,10 @@ K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and 
 ##Python Versions
 
 Kev should work on Python 2.7, 3.3, 3.4, and 3.5. It will not work on 3.2.
+##Install
+```
+pip install kev
+```
 
 ##Example Usage
 
