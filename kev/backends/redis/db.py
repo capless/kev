@@ -49,8 +49,8 @@ class RedisDB(DocDB):
             pipe.hgetall(id)
 
         raw_docs = pipe.execute()
-
-        return [cls(**{k.decode(): v.decode() for k, v in doc.items()}) for doc in raw_docs]
+        for doc in raw_docs:
+            yield cls(**{k.decode(): v.decode() for k, v in doc.items()})
 
     def get(self, doc_obj, doc_id):
 
@@ -97,5 +97,5 @@ class RedisDB(DocDB):
         for id in id_list:
             pipe.hgetall(id)
         raw_docs = pipe.execute()
-
-        return [doc_class(**{k.decode(): v.decode() for k, v in doc.items()}) for doc in raw_docs]
+        for doc in raw_docs:
+            yield doc_class(**{k.decode(): v.decode() for k, v in doc.items()})

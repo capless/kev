@@ -37,7 +37,6 @@ class S3DB(RedisDB):
         return doc_obj
 
     def get(self,doc_obj,doc_id):
-
         doc = json.loads(self._db.Object(
                 self.bucket, doc_obj.get_doc_id(doc_id)).get().get('Body').read().decode())
 
@@ -45,7 +44,7 @@ class S3DB(RedisDB):
 
     def flush_db(self):
         self._indexer.flushdb()
-        obj_list = list(self._db.Bucket(self.bucket).objects.all())
+        obj_list = self._db.Bucket(self.bucket).objects.all()
         for i in obj_list:
             i.delete()
 
@@ -61,16 +60,13 @@ class S3DB(RedisDB):
         klass = cls()
         id_list = [int(id.rsplit(b':',1)[1]) for id in self._indexer.smembers('{0}:all'.format(
             klass.get_class_name()))]
-
-        obj_list = []
-
         for id in id_list:
-            obj_list.append(self.get(klass,id))
-        return obj_list
+            yield self.get(klass,id)
 
     def evaluate(self, filters_list, doc_class):
         if len(filters_list) == 1:
             id_list = self._indexer.smembers(filters_list[0])
         else:
             id_list = self._indexer.sinter(*filters_list)
-        return [doc_class.get(self.parse_id(id)) for id in id_list]
+        for id in id_list:
+            yield doc_class.get(self.parse_id(id))

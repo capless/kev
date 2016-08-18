@@ -148,9 +148,9 @@ class S3QueryTestCase(KevTestCase):
         self.assertEqual(obj._id,self.t1._id)
 
     def test_flush_db(self):
-        self.assertEqual(3,len(self.doc_class.all()))
+        self.assertEqual(3,len(list(self.doc_class.all())))
         self.doc_class().flush_db()
-        self.assertEqual(0, len(self.doc_class.all()))
+        self.assertEqual(0, len(list(self.doc_class.all())))
 
     def test_delete(self):
         qs = self.doc_class.objects().filter({'city': 'durham'})
@@ -178,7 +178,7 @@ class S3QueryTestCase(KevTestCase):
 
     def test_all(self):
         qs = self.doc_class.all()
-        self.assertEqual(3,len(qs))
+        self.assertEqual(3,len(list(qs)))
 
     def test_objects_get_multiple_results(self):
         with self.assertRaises(QueryError) as vm:
