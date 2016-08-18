@@ -1,6 +1,8 @@
 # kev
 K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and ElasticSearch. Currently supported backends are Redis and a S3/Redis hybrid backend.
 
+[![Build Status](https://travis-ci.org/kevproject/kev.svg?branch=master)](https://travis-ci.org/kevproject/kev)
+
 ##Python Versions
 
 Kev should work on Python 2.7, 3.3, 3.4, and 3.5. It will not work on 3.2.
