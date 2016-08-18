@@ -8,6 +8,8 @@ import time
 
 from decimal import Decimal
 
+import six
+
 from .validators import (RequiredValidator,StringValidator,
                          MaxLengthValidator,MinLengthValidator,
                          IntegerValidator,MaxValueValidator,
@@ -194,7 +196,7 @@ class DateProperty(DateMixin,BaseProperty):
     def get_python_value(self, value):
         if not value:
             return None
-        if isinstance(value, str):
+        if isinstance(value, six.string_types):
             try:
                 value = datetime.date(*time.strptime(value, '%Y-%m-%d')[:3])
             except ValueError as e:
@@ -233,7 +235,7 @@ class DateTimeProperty(DateTimeMixin,BaseProperty):
         return default
 
     def get_python_value(self, value):
-        if isinstance(value, str):
+        if isinstance(value, six.string_types):
             try:
                 value = value.split('.', 1)[0] # strip out microseconds
                 value = value[0:19] # remove timezone
@@ -251,11 +253,8 @@ class DateTimeProperty(DateTimeMixin,BaseProperty):
 
         if value is None:
             return value
+
         return value.replace(microsecond=0).isoformat() + 'Z'
     
     def now(self):
         return datetime.datetime.utcnow()
-
-
-
-    

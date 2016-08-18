@@ -1,4 +1,6 @@
 import datetime
+import time
+import six
 
 from .exceptions import ValidationException
 
@@ -34,7 +36,7 @@ class RequiredValidator(Validator):
 class StringValidator(Validator):
     
     def validate(self,value,key=None):
-        if value and not isinstance(value, str):
+        if value and not isinstance(value, six.string_types):
             raise ValidationException(
                 '{0}: This value should '
                 'be a string'.format(key)
@@ -44,6 +46,11 @@ class StringValidator(Validator):
 class DateValidator(Validator):
     
     def validate(self, value,key=None):
+        if value and isinstance(value,six.string_types):
+            try:
+                value = datetime.date(*time.strptime(value, '%Y-%m-%d')[:3])
+            except ValueError:
+                pass
         if value and not isinstance(value, datetime.date):
             raise ValidationException(
                 '{0}: This value should be a valid date object.'.format(key))
@@ -52,6 +59,13 @@ class DateValidator(Validator):
 class DateTimeValidator(Validator):
     
     def validate(self, value,key=None):
+        if value and isinstance(value,six.string_types):
+            try:
+                value = value.split('.', 1)[0]  # strip out microseconds
+                value = value[0:19]  # remove timezone
+                value = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S')
+            except (IndexError,KeyError,ValueError):
+                pass
         if value and not isinstance(value, datetime.datetime):
             raise ValidationException(
                 '{0}: This value should be a valid datetime object.'.format(key))
