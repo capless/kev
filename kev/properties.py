@@ -14,6 +14,7 @@ from .validators import (RequiredValidator,StringValidator,
                          MinValueValidator,FloatValidator,
                          DateValidator,DateTimeValidator,BooleanValidator
                          )
+import collections
 
 class VariableMixin(object):
     def get_validators(self):
@@ -110,7 +111,7 @@ class BaseProperty(VariableMixin,object):
     def get_default_value(self):
         """ return default value """
         default = self.default_value
-        if callable(default):
+        if isinstance(default, collections.Callable):
             default = default()
         return default
     
@@ -123,12 +124,12 @@ class BaseProperty(VariableMixin,object):
 class CharProperty(CharVariableMixin,BaseProperty):
     
     def get_db_value(self, value):
-        return unicode(value)
+        return str(value)
     
     def get_python_value(self, value):
         if not value:
             return None
-        return unicode(value)
+        return str(value)
 
 class IntegerProperty(IntegerVariableMixin,BaseProperty):
     
@@ -193,7 +194,7 @@ class DateProperty(DateMixin,BaseProperty):
     def get_python_value(self, value):
         if not value:
             return None
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             try:
                 value = datetime.date(*time.strptime(value, '%Y-%m-%d')[:3])
             except ValueError as e:
@@ -232,7 +233,7 @@ class DateTimeProperty(DateTimeMixin,BaseProperty):
         return default
 
     def get_python_value(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             try:
                 value = value.split('.', 1)[0] # strip out microseconds
                 value = value[0:19] # remove timezone

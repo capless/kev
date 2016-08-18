@@ -1,6 +1,7 @@
 import boto3
 import json
 import redis
+import six
 
 from kev.backends.redis.db import RedisDB
 
@@ -24,8 +25,9 @@ class S3DB(RedisDB):
 
     def save(self,doc_obj):
         doc_obj, doc = self._save(doc_obj)
+
         self._db.Object(self.bucket, doc_obj._id).put(
-            Body=json.dumps(doc))
+                Body=json.dumps(doc))
         pipe = self._indexer.pipeline()
         pipe = self.add_to_model_set(doc_obj, pipe)
         pipe = self.add_indexes(doc_obj, doc, pipe)
@@ -35,8 +37,9 @@ class S3DB(RedisDB):
         return doc_obj
 
     def get(self,doc_obj,doc_id):
+
         doc = json.loads(self._db.Object(
-            self.bucket, doc_obj.get_doc_id(doc_id)).get().get('Body').read())
+                self.bucket, doc_obj.get_doc_id(doc_id)).get().get('Body').read().decode())
 
         return doc_obj.__class__(**doc)
 
@@ -56,8 +59,9 @@ class S3DB(RedisDB):
 
     def all(self,cls):
         klass = cls()
-        id_list = [id.rsplit(':',1)[1] for id in self._indexer.smembers('{0}:all'.format(
+        id_list = [int(id.rsplit(b':',1)[1]) for id in self._indexer.smembers('{0}:all'.format(
             klass.get_class_name()))]
+
         obj_list = []
 
         for id in id_list:

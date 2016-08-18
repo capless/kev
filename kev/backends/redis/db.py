@@ -47,14 +47,18 @@ class RedisDB(DocDB):
         pipe = self._db.pipeline()
         for id in id_list:
             pipe.hgetall(id)
-        return [cls(**doc) for doc in pipe.execute()]
+
+        raw_docs = pipe.execute()
+
+        return [cls(**{k.decode(): v.decode() for k, v in doc.items()}) for doc in raw_docs]
 
     def get(self, doc_obj, doc_id):
 
         doc = self._db.hgetall(doc_obj.get_doc_id(doc_id))
-        if len(doc.keys()) == 0:
+        if len(list(doc.keys())) == 0:
             raise DocNotFoundError
-        return doc_obj.__class__(**doc)
+
+        return doc_obj.__class__(**{k.decode(): v.decode() for k, v in doc.items()})
 
     def flush_db(self):
         self._db.flushdb()
@@ -92,4 +96,6 @@ class RedisDB(DocDB):
         pipe = self._db.pipeline()
         for id in id_list:
             pipe.hgetall(id)
-        return [doc_class(**doc) for doc in pipe.execute()]
+        raw_docs = pipe.execute()
+
+        return [doc_class(**{k.decode(): v.decode() for k, v in doc.items()}) for doc in raw_docs]
