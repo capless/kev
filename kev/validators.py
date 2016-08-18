@@ -1,6 +1,6 @@
 import datetime
 
-from exceptions import ValidationException
+from .exceptions import ValidationException
 
 __all__ = [
     "Validator",

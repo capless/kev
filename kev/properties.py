@@ -196,9 +196,9 @@ class DateProperty(DateMixin,BaseProperty):
         if isinstance(value, basestring):
             try:
                 value = datetime.date(*time.strptime(value, '%Y-%m-%d')[:3])
-            except ValueError, e:
+            except ValueError as e:
                 raise ValueError('Invalid ISO date %r [%s]' % (value,
-                    str(e)))
+                    str(e.exception)))
         return value
 
     def get_db_value(self, value):
@@ -237,9 +237,9 @@ class DateTimeProperty(DateTimeMixin,BaseProperty):
                 value = value.split('.', 1)[0] # strip out microseconds
                 value = value[0:19] # remove timezone
                 value = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S')
-            except ValueError, e:
+            except ValueError as e:
                 raise ValueError('Invalid ISO date/time %r [%s]' %
-                        (value, str(e)))
+                        (value, str(e.exception)))
         return value
 
     def get_db_value(self, value):

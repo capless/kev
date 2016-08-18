@@ -12,7 +12,7 @@ class S3DB(RedisDB):
 
     def __init__(self,**kwargs):
 
-        if kwargs.has_key('aws_secret_access_key') and kwargs.has_key('aws_access_key_id'):
+        if 'aws_secret_access_key' in kwargs and 'aws_access_key_id' in kwargs:
             boto3.Session(aws_secret_access_key=kwargs['aws_secret_access_key'],
                 aws_access_key_id=kwargs['aws_access_key_id'])
         self._db = boto3.resource('s3')

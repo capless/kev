@@ -52,7 +52,7 @@ class BaseDocument(object):
         return '({0} Object)'.format(self.__class__.__name__)
 
     def __getattr__(self,name):
-        if name in self._base_properties.keys():
+        if name in self._base_properties:
             prop = self._base_properties[name]
             return prop.get_python_value(self._doc.get(name))
     
