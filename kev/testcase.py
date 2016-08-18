@@ -25,5 +25,5 @@ kev_handler = KevHandler({
 class KevTestCase(unittest.TestCase):
 
     def tearDown(self):
-        for db_label in kev_handler._databases.keys():
+        for db_label in list(kev_handler._databases.keys()):
             kev_handler.get_db(db_label).flush_db()

@@ -27,9 +27,9 @@ class UtilTest(unittest.TestCase):
 
     def test_get_doc_type(self):
         a = get_doc_type(Frog)
-        self.assertEquals('Frog',a)
+        self.assertEqual('Frog',a)
         b = get_doc_type(Dog)
-        self.assertEquals('animal', b)
+        self.assertEqual('animal', b)
 
 if __name__ == '__main__':
     unittest.main()

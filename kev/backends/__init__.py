@@ -1,3 +1,5 @@
+import six
+
 from kev.exceptions import QueryError, ValidationException
 from kev.utils import get_doc_type
 
@@ -17,7 +19,10 @@ class DocDB(object):
         raise NotImplementedError
 
     def parse_id(self, doc_id):
-        return doc_id.split(':')[2]
+        try:
+            return doc_id.split(':')[2]
+        except TypeError:
+            return doc_id.decode().split(':')[2]
 
     def create_pk(self):
         raise NotImplementedError
@@ -36,7 +41,7 @@ class DocDB(object):
     def _save(self,doc_obj):
         doc = doc_obj._doc.copy()
 
-        for key, prop in doc_obj._base_properties.items():
+        for key, prop in list(doc_obj._base_properties.items()):
             prop.validate(doc.get(key), key)
             raw_value = prop.get_python_value(doc.get(key))
             if prop.unique:
@@ -47,7 +52,7 @@ class DocDB(object):
 
         doc['_doc_type'] = get_doc_type(doc_obj.__class__)
 
-        if not doc.has_key('_id'):
+        if '_id' not in doc:
             self.create_pk(doc_obj)
             doc['_id'] = doc_obj._id
         return (doc_obj,doc)

@@ -17,6 +17,9 @@ class TestDocument(Document):
     no_subscriptions = IntegerProperty(default_value=1,min_value=1,max_value=20)
     gpa = FloatProperty()
 
+    def __unicode__(self):
+        return self.name
+
     class Meta:
         use_db = 's3'
         handler = kev_handler
@@ -53,12 +56,12 @@ class DocumentTestCase(KevTestCase):
         self.assertEqual(obj.no_subscriptions,1)
         self.assertEqual(obj._doc.get('no_subscriptions'), 1)
         self.assertEqual(obj.gpa,None)
-        self.assertFalse(obj._doc.has_key('gpa'))
+        self.assertFalse('gpa' in obj._doc)
 
     def test_get_unique_props(self):
         obj = S3TestDocumentSlug(name='Brian',slug='brian',email='brian@host.com',
                                  city='Greensboro',gpa=4.0)
-        self.assertEqual(obj.get_unique_props(),['name','slug','email'])
+        self.assertEqual(obj.get_unique_props().sort(),['name','slug','email'].sort())
 
     def test_set_indexed_prop(self):
         obj = S3TestDocumentSlug(name='Brian', slug='brian', email='brian@host.com',
@@ -74,35 +77,35 @@ class DocumentTestCase(KevTestCase):
         t2 = TestDocument(name='Google', is_active='Gone', gpa=4.0)
         with self.assertRaises(ValidationException) as vm:
             t2.save()
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'is_active: This value should be True or False.')
 
     def test_validate_datetime(self):
         t2 = TestDocument(name='Google',gpa=4.0,last_updated='today')
         with self.assertRaises(ValidationException) as vm:
             t2.save()
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'last_updated: This value should be a valid datetime object.')
 
     def test_validate_date(self):
         t2 = TestDocument(name='Google', gpa=4.0, date_created='today')
         with self.assertRaises(ValidationException) as vm:
             t2.save()
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'date_created: This value should be a valid date object.')
 
     def test_validate_integer(self):
         t2 = TestDocument(name='Google', gpa=4.0, no_subscriptions='seven')
         with self.assertRaises(ValidationException) as vm:
             t2.save()
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'no_subscriptions: This value should be an integer')
 
     def test_validate_float(self):
         t2 = TestDocument(name='Google', gpa='seven')
         with self.assertRaises(ValidationException) as vm:
             t2.save()
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'gpa: This value should be a float.')
 
     def test_validate_unique(self):
@@ -111,7 +114,7 @@ class DocumentTestCase(KevTestCase):
         t2 = TestDocument(name='Google',gpa=4.0)
         with self.assertRaises(ValidationException) as vm:
             t2.save()
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'There is already a name with the value of Google')
 
 
@@ -142,7 +145,7 @@ class S3QueryTestCase(KevTestCase):
 
     def test_get(self):
         obj = self.doc_class.get(self.t1.id)
-        self.assertEqual(obj._doc,self.t1._doc)
+        self.assertEqual(obj._id,self.t1._id)
 
     def test_flush_db(self):
         self.assertEqual(3,len(self.doc_class.all()))
@@ -170,7 +173,7 @@ class S3QueryTestCase(KevTestCase):
     def test_objects_get_no_result(self):
         with self.assertRaises(QueryError) as vm:
             self.doc_class.objects().get({'username':'affsdfadsf'})
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'This query did not return a result.')
 
     def test_all(self):
@@ -180,7 +183,7 @@ class S3QueryTestCase(KevTestCase):
     def test_objects_get_multiple_results(self):
         with self.assertRaises(QueryError) as vm:
             self.doc_class.objects().get({'city': 'durham'})
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
             'This query should return exactly one result. Your query returned 2')
 
     def test_combine_list(self):

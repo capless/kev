@@ -9,7 +9,7 @@ class KevHandler(object):
         self._connections = dict()
         self._labels = list()
 
-        for db_label,db_info in databases.iteritems():
+        for db_label,db_info in databases.items():
             db_klass = kev.utils.import_util(db_info.get('backend'))
             self._databases[db_label] = db_klass(**db_info.get('connection'))
 

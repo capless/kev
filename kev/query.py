@@ -46,7 +46,7 @@ class QuerySetMixin(object):
 
     def prepare_filters(self):
         filter_list = []
-        for k,v in self.q.items():
+        for k,v in list(self.q.items()):
             if isinstance(v,list):
                 for index_v in v:
                     filter_list.append(self._doc_class().get_index_name(k,index_v))
@@ -75,7 +75,7 @@ class QuerySetMixin(object):
     def count(self):
         return len(list(self.evaluate()))
             
-    def __nonzero__(self):
+    def __bool__(self):
         self._fetch_all()
         return bool(self._result_cache)
     

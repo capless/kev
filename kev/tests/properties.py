@@ -13,7 +13,7 @@ class PropertiesTestCase(unittest.TestCase):
         self.assertEqual(None,prop.default_value)
         with self.assertRaises(ValidationException) as vm:
             prop.validate(None,'first_name')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'first_name: This value is required')
 
     def test_base_property_not_required(self):
@@ -35,23 +35,23 @@ class PropertiesTestCase(unittest.TestCase):
         prop = CharProperty(required=True)
         with self.assertRaises(ValidationException) as vm:
             prop.validate(None, 'first_name')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'first_name: This value is required')
         with self.assertRaises(ValidationException) as vm:
             prop.validate(34, 'first_name')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'first_name: This value should be a string')
 
     def test_char_property_validate_default_value(self):
         prop = CharProperty(required=True,default_value='Ben')
         # Make sure that the default value works
         prop.validate(None, 'first_name')
-        self.assertEquals(prop.get_default_value(),'Ben')
+        self.assertEqual(prop.get_default_value(),'Ben')
         prop = CharProperty(required=True,default_value=5)
         with self.assertRaises(ValidationException) as vm:
             prop.validate(None,'first_name')
-        self.assertEquals(str(vm.exception),
-                          u'first_name: This value should be a string')
+        self.assertEqual(str(vm.exception),
+                          'first_name: This value should be a string')
 
     def test_integer_property_validators_set(self):
         prop = IntegerProperty()
@@ -61,22 +61,22 @@ class PropertiesTestCase(unittest.TestCase):
         prop = IntegerProperty(required=True)
         with self.assertRaises(ValidationException) as vm:
             prop.validate(None, 'no_packages')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'no_packages: This value is required')
         with self.assertRaises(ValidationException) as vm:
             prop.validate('brains', 'no_packages')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'no_packages: This value should be an integer')
 
     def test_integer_property_validate_default_value(self):
         prop = IntegerProperty(required=True, default_value=5)
         # Make sure that the default value works
         prop.validate(None, 'no_packages')
-        self.assertEquals(prop.get_default_value(), 5)
+        self.assertEqual(prop.get_default_value(), 5)
         prop = IntegerProperty(required=True, default_value='Ben')
         with self.assertRaises(ValidationException) as vm:
             prop.validate(None, 'no_packages')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'no_packages: This value should be an integer')
 
     def test_float_property_validators_set(self):
@@ -87,22 +87,22 @@ class PropertiesTestCase(unittest.TestCase):
         prop = FloatProperty(required=True)
         with self.assertRaises(ValidationException) as vm:
             prop.validate(None, 'no_packages')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'no_packages: This value is required')
         with self.assertRaises(ValidationException) as vm:
             prop.validate('brains', 'no_packages')
-        self.assertEquals(str(vm.exception),
-                          u'no_packages: This value should be a float.')
+        self.assertEqual(str(vm.exception),
+                          'no_packages: This value should be a float.')
 
     def test_float_property_validate_default_value(self):
         prop = FloatProperty(required=True, default_value=5.5)
         # Make sure that the default value works
         prop.validate(None, 'no_packages')
-        self.assertEquals(prop.get_default_value(), 5.5)
+        self.assertEqual(prop.get_default_value(), 5.5)
         prop = FloatProperty(required=True, default_value=5)
         with self.assertRaises(ValidationException) as vm:
             prop.validate(None, 'no_packages')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'no_packages: This value should be a float.')
 
     def test_date_property_validators_set(self):
@@ -113,76 +113,76 @@ class PropertiesTestCase(unittest.TestCase):
         prop = DateProperty(required=True)
         with self.assertRaises(ValidationException) as vm:
             prop.validate(None, 'no_packages')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'no_packages: This value is required')
         with self.assertRaises(ValidationException) as vm:
             prop.validate('brains', 'no_packages')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'no_packages: This value should be a valid date object.')
 
     def test_date_property_validate_auto_now(self):
         prop = DateProperty(required=True, auto_now=True)
         # Make sure that the default value works
         prop.validate(None, 'no_packages')
-        self.assertEquals(prop.get_default_value(), datetime.date.today())
+        self.assertEqual(prop.get_default_value(), datetime.date.today())
 
     def test_date_property_validate_auto_now_add(self):
         prop = DateProperty(required=True, auto_now_add=True)
         # Make sure that the default value works
         prop.validate(None, 'no_packages')
-        self.assertEquals(prop.get_default_value(), datetime.date.today())
+        self.assertEqual(prop.get_default_value(), datetime.date.today())
 
     def test_date_property_validate_default_value(self):
         prop = DateProperty(required=True, default_value=datetime.date.today())
         # Make sure that the default value works
         prop.validate(None, 'no_packages')
-        self.assertEquals(prop.get_default_value(), datetime.date.today())
+        self.assertEqual(prop.get_default_value(), datetime.date.today())
 
     def test_datetime_property_validate(self):
         prop = DateTimeProperty(required=True)
         with self.assertRaises(ValidationException) as vm:
             prop.validate(None, 'no_packages')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'no_packages: This value is required')
         with self.assertRaises(ValidationException) as vm:
             prop.validate('brains', 'no_packages')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'no_packages: This value should be a valid datetime object.')
 
     def test_datetime_property_validate_default_value(self):
         prop = DateTimeProperty(required=True, default_value=datetime.datetime.now())
         # Make sure that the default value works
         prop.validate(None, 'no_packages')
-        self.assertEquals(type(prop.get_default_value()), datetime.datetime)
+        self.assertEqual(type(prop.get_default_value()), datetime.datetime)
 
     def test_datetime_property_validate_auto_now(self):
         prop = DateTimeProperty(requirYYed=True, auto_now=True)
         # Make sure that the default value works
         prop.validate(None, 'no_packages')
-        self.assertEquals(type(prop.get_default_value()), datetime.datetime)
+        self.assertEqual(type(prop.get_default_value()), datetime.datetime)
 
     def test_datetime_property_validate_auto_now_add(self):
         prop = DateTimeProperty(required=True, auto_now_add=True)
         # Make sure that the default value works
         prop.validate(None, 'no_packages')
-        self.assertEquals(type(prop.get_default_value()), datetime.datetime)
+        self.assertEqual(type(prop.get_default_value()), datetime.datetime)
 
     def test_boolean_property_validate(self):
         prop = BooleanProperty(required=True)
         with self.assertRaises(ValidationException) as vm:
             prop.validate(None, 'is_staff')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'is_staff: This value should be True or False.')
         with self.assertRaises(ValidationException) as vm:
             prop.validate('brains', 'is_staff')
-        self.assertEquals(str(vm.exception),
+        self.assertEqual(str(vm.exception),
                           'is_staff: This value should be True or False.')
 
     def test_boolean_property_validate_default_value(self):
         prop = BooleanProperty(default_value=True)
         # Make sure that the default value works
         prop.validate(None, 'is_active')
-        self.assertEquals(type(prop.get_default_value()), type(True))
+        self.assertEqual(type(prop.get_default_value()), type(True))
 
 
 if __name__ == '__main__':
