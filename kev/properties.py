@@ -199,7 +199,7 @@ class DateProperty(DateMixin,BaseProperty):
                 value = datetime.date(*time.strptime(value, '%Y-%m-%d')[:3])
             except ValueError as e:
                 raise ValueError('Invalid ISO date %r [%s]' % (value,
-                    str(e.exception)))
+                    str(e)))
         return value
 
     def get_db_value(self, value):
@@ -240,7 +240,7 @@ class DateTimeProperty(DateTimeMixin,BaseProperty):
                 value = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S')
             except ValueError as e:
                 raise ValueError('Invalid ISO date/time %r [%s]' %
-                        (value, str(e.exception)))
+                        (value, str(e)))
         return value
 
     def get_db_value(self, value):
