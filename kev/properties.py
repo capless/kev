@@ -10,6 +10,7 @@ from decimal import Decimal
 
 import six
 
+from kev.exceptions import ValidationException
 from .validators import (RequiredValidator,StringValidator,
                          MaxLengthValidator,MinLengthValidator,
                          IntegerValidator,MaxValueValidator,
@@ -158,12 +159,16 @@ class FloatProperty(FloatVariableMixin,BaseProperty):
 class BooleanProperty(BooleanMixin,BaseProperty):
 
     def get_db_value(self,value):
-        return int(value)
+        return bool(value)
 
     def get_python_value(self,value):
         if not value:
             return False
-        return bool(int(value))
+        try:
+            BooleanValidator().validate(value,'boolean')
+        except ValidationException:
+            return value
+        return bool(value)
 
 
 class DateProperty(DateMixin,BaseProperty):
