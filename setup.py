@@ -4,7 +4,7 @@ from pip.req import parse_requirements
 install_reqs = parse_requirements('requirements.txt', session=False)
 
 
-version = '0.5.1'
+version = '0.6.0'
  
 LONG_DESCRIPTION = """
 =======================
