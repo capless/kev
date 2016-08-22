@@ -40,7 +40,6 @@ class DocDB(object):
 
     def _save(self,doc_obj):
         doc = doc_obj._doc.copy()
-        print('_save is_active',doc.get('is_active'))
         for key, prop in list(doc_obj._base_properties.items()):
             prop.validate(doc.get(key), key)
             raw_value = prop.get_python_value(doc.get(key))
