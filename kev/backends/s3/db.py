@@ -33,14 +33,14 @@ class S3DB(RedisDB):
         pipe = self.add_indexes(doc_obj, doc, pipe)
         pipe = self.remove_indexes(doc_obj, pipe)
         pipe.execute()
-        doc_obj._doc = doc_obj.process_doc_kwargs(doc)
+        # doc_obj._doc = doc_obj.process_doc_kwargs(doc)
         return doc_obj
 
-    def get(self,doc_obj,doc_id):
+    def get(self,doc_class,doc_id):
         doc = json.loads(self._db.Object(
-                self.bucket, doc_obj.get_doc_id(doc_id)).get().get('Body').read().decode())
-
-        return doc_obj.__class__(**doc)
+                self.bucket, doc_class.get_doc_id(
+                doc_id)).get().get('Body').read().decode())
+        return doc_class(**doc)
 
     def flush_db(self):
         self._indexer.flushdb()
@@ -56,12 +56,11 @@ class S3DB(RedisDB):
         pipe = self.remove_indexes(doc_obj, pipe)
         pipe.execute()
 
-    def all(self,cls):
-        klass = cls()
+    def all(self,doc_class):
         id_list = [int(id.rsplit(b':',1)[1]) for id in self._indexer.smembers('{0}:all'.format(
-            klass.get_class_name()))]
+            doc_class.get_class_name()))]
         for id in id_list:
-            yield self.get(klass,id)
+            yield self.get(doc_class,id)
 
     def evaluate(self, filters_list, doc_class):
         if len(filters_list) == 1:

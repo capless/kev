@@ -14,8 +14,8 @@ class RedisDB(DocDB):
         self._db = self._indexer = self.db_class(kwargs['host'],port=kwargs['port'])
 
     def create_pk(self,doc_obj):
-        pk = self._indexer.incr('{0}:{1}:id._pk'.format(self.backend_id,doc_obj.__class__.__name__.lower()))
-        doc_obj.set_pk('{0}:id:{1}'.format(doc_obj.__class__.__name__.lower(), pk))
+        pk = self._indexer.incr('{0}:{1}:id._pk'.format(self.backend_id,doc_obj.get_class_name()))
+        doc_obj.set_pk('{0}:{1}:id:{2}'.format(self.backend_id,doc_obj.get_class_name(), pk))
         return doc_obj
 
     #CRUD Operations
@@ -29,7 +29,7 @@ class RedisDB(DocDB):
         pipe = self.add_indexes(doc_obj, doc, pipe)
         pipe = self.remove_indexes(doc_obj, pipe)
         pipe.execute()
-        doc_obj._doc = doc_obj.process_doc_kwargs(doc)
+        # doc_obj._doc = doc_obj.process_doc_kwargs(doc)
         return doc_obj
 
     def delete(self,doc_obj):
@@ -41,9 +41,9 @@ class RedisDB(DocDB):
         pipe.execute()
 
     def all(self,cls):
-        klass = cls()
+
         id_list = self._db.smembers('{0}:all'.format(
-            klass.get_class_name()))
+            cls.get_class_name()))
         pipe = self._db.pipeline()
         for id in id_list:
             pipe.hgetall(id)
@@ -58,7 +58,7 @@ class RedisDB(DocDB):
         if len(list(doc.keys())) == 0:
             raise DocNotFoundError
 
-        return doc_obj.__class__(**{k.decode(): v.decode() for k, v in doc.items()})
+        return doc_obj(**{k.decode(): v.decode() for k, v in doc.items()})
 
     def flush_db(self):
         self._db.flushdb()
