@@ -135,6 +135,12 @@ class MinLengthValidator(MaxLengthValidator):
 class BooleanValidator(Validator):
 
     def validate(self,value,key):
+        try:
+            int(value)
+        except (TypeError,ValueError):
+            raise ValidationException(
+                '{0}: This value should be True or False.'.format(key)
+            )
         if not isinstance(value,bool):
             raise ValidationException(
                 '{0}: This value should be True or False.'.format(key)

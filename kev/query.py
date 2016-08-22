@@ -49,9 +49,9 @@ class QuerySetMixin(object):
         for k,v in list(self.q.items()):
             if isinstance(v,list):
                 for index_v in v:
-                    filter_list.append(self._doc_class().get_index_name(k,index_v))
+                    filter_list.append(self._doc_class.get_index_name(k,index_v))
             else:
-                filter_list.append(self._doc_class().get_index_name(k,v))
+                filter_list.append(self._doc_class.get_index_name(k,v))
         return filter_list
 
     def __len__(self):

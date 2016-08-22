@@ -67,7 +67,7 @@ class DocumentTestCase(KevTestCase):
         obj = S3TestDocumentSlug(name='Brian', slug='brian', email='brian@host.com',
                                  city='Greensboro', gpa=4.0)
         obj.name = 'Tariq'
-        self.assertEqual(obj._index_change_list,['s3testdocumentslug:indexes:name:brian'])
+        self.assertEqual(obj._index_change_list,['s3:s3testdocumentslug:indexes:name:brian'])
 
     def test_validate_valid(self):
         t1 = TestDocument(name='DNSly',is_active=False,no_subscriptions=2,gpa=3.5)

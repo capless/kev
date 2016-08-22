@@ -2,6 +2,7 @@ from six import with_metaclass
 
 from .properties import BaseProperty
 from .query import QueryManager
+import inspect
 
 BUILTIN_DOC_ATTRS = ('_id','_doc_type')
 
@@ -119,27 +120,28 @@ class BaseDocument(object):
     def objects(cls):
         return QueryManager(cls)
 
-    def get_doc_id(self,id):
-        return '{0}:id:{1}'.format(self.__class__.__name__.lower(),id)
+    @classmethod
+    def get_doc_id(cls,id):
+        return '{0}:{1}:id:{2}'.format(cls.get_db().backend_id,cls.get_class_name(),id)
 
-    def get_class_name(self):
-        return self.__class__.__name__.lower()
+    @classmethod
+    def get_class_name(cls):
+        return cls.__name__.lower()
 
-    def get_index_name(self, prop, index_value):
-        return '{0}:indexes:{1}:{2}'.format(
-            self.get_class_name(), prop, index_value).lower()
+    @classmethod
+    def get_index_name(cls, prop, index_value):
+        return '{0}:{1}:indexes:{2}:{3}'.format(
+            cls.get_db().backend_id,cls.get_class_name(), prop, index_value).lower()
 
     #Basic Operations
 
     @classmethod
     def get(cls,doc_id):
-        ins = cls()
-        return ins._db.get(ins,doc_id)
+        return cls.get_db().get(cls,doc_id)
 
     @classmethod
     def all(cls):
-        ins = cls()
-        return ins._db.all(cls)
+        return cls.get_db().all(cls)
 
     def flush_db(self):
         self._db.flush_db()
