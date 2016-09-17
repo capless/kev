@@ -1,12 +1,10 @@
-from setuptools import setup,find_packages
+from setuptools import setup, find_packages
 from pip.req import parse_requirements
 
 install_reqs = parse_requirements('requirements.txt', session=False)
 
-
 version = '0.6.3'
 
- 
 LONG_DESCRIPTION = """
 =======================
 Kev
@@ -16,7 +14,7 @@ K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores. Cur
 backends are Redis and a S3/Redis hybrid backend.
 
 """
- 
+
 setup(
     name='kev',
     version=version,
@@ -33,7 +31,9 @@ setup(
     author_email='opensource@ipoots.com',
     maintainer='Brian Jinwright',
     packages=find_packages(),
-    
+
     license='Apache',
     install_requires=[str(ir.req) for ir in install_reqs],
+    include_package_data=True,
+    zip_safe=False,
 )
