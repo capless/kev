@@ -1,6 +1,10 @@
 import six
+import json
+import hashlib
+import uuid
+import datetime
 
-from kev.exceptions import QueryError, ValidationException
+from kev.exceptions import ValidationException
 from kev.utils import get_doc_type
 
 
@@ -20,12 +24,17 @@ class DocDB(object):
 
     def parse_id(self, doc_id):
         try:
-            return doc_id.split(':')[3]
+            return doc_id.split(':')[0]
         except TypeError:
-            return doc_id.decode().split(':')[3]
+            return doc_id.decode().split(':')[0]
 
-    def create_pk(self):
-        raise NotImplementedError
+    def create_pk(self, doc_obj):
+        doc = doc_obj._doc.copy()
+        doc['_date'] = str(datetime.datetime.now())
+        doc['_uuid'] = str(uuid.uuid4())
+        hash_pk = hashlib.md5(six.b(json.dumps(doc))).hexdigest()[:10]
+        doc_obj.set_pk('{0}:id:{1}:{2}'.format(hash_pk, self.backend_id, doc_obj.get_class_name()))
+        return doc_obj
 
     def check_unique(self,doc_obj,key,value):
         obj = doc_obj.objects().filter({key:value})

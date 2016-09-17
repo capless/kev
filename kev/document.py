@@ -122,7 +122,7 @@ class BaseDocument(object):
 
     @classmethod
     def get_doc_id(cls,id):
-        return '{0}:{1}:id:{2}'.format(cls.get_db().backend_id,cls.get_class_name(),id)
+        return '{0}:id:{1}:{2}'.format(id,cls.get_db().backend_id,cls.get_class_name())
 
     @classmethod
     def get_class_name(cls):
