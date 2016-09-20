@@ -23,13 +23,14 @@ class DocDB(object):
         raise NotImplementedError
 
     def parse_id(self, doc_id):
+        print(doc_id)
         try:
             return doc_id.split(':')[0]
         except TypeError:
             return doc_id.decode().split(':')[0]
 
-    def create_pk(self, doc_obj):
-        doc = doc_obj._doc.copy()
+    def create_pk(self, doc_obj,doc):
+        doc = doc.copy()
         doc['_date'] = str(datetime.datetime.now())
         doc['_uuid'] = str(uuid.uuid4())
         hash_pk = hashlib.md5(six.b(json.dumps(doc))).hexdigest()[:10]
@@ -61,6 +62,6 @@ class DocDB(object):
         doc['_doc_type'] = get_doc_type(doc_obj.__class__)
 
         if '_id' not in doc:
-            self.create_pk(doc_obj)
+            self.create_pk(doc_obj,doc)
             doc['_id'] = doc_obj._id
         return (doc_obj,doc)

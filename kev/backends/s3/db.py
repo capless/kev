@@ -29,10 +29,8 @@ class S3DB(DocDB):
 
     def save(self,doc_obj):
         doc_obj, doc = self._save(doc_obj)
-
         self._db.Object(self.bucket, self.doc_all_id(doc_obj.__class__,doc_obj._id)).put(
                 Body=json.dumps(doc))
-
         self.add_indexes(doc_obj, doc)
         self.remove_indexes(doc_obj)
 
@@ -91,4 +89,5 @@ class S3DB(DocDB):
         else:
             raise ValueError('There should only be one filter for S3 backends')
         for id in id_list:
-            yield doc_class.get(self.parse_id(id))
+            print(self.parse_id(id.key))
+            yield doc_class.get(self.parse_id(id.key))
