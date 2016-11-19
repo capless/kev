@@ -3,13 +3,13 @@ from kev.loading import KevHandler
 from envs import env
 
 kev_handler = KevHandler({
-    's3':{
-        'backend':'kev.backends.s3.db.S3DB',
-        'connection':{
-            'bucket':env('S3_BUCKET_TEST'),
-            'indexer':{
-                'host':env('REDIS_HOST_TEST'),
-                'port':env('REDIS_PORT_TEST'),
+    's3': {
+        'backend': 'kev.backends.s3.db.S3DB',
+        'connection': {
+            'bucket': env('S3_BUCKET_TEST'),
+            'indexer': {
+                'host': env('REDIS_HOST_TEST'),
+                'port': env('REDIS_PORT_TEST'),
             }
         }
     },
@@ -21,6 +21,7 @@ kev_handler = KevHandler({
         }
     }
 })
+
 
 class KevTestCase(unittest.TestCase):
 

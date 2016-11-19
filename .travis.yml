@@ -9,3 +9,9 @@ python:
 install: "pip install -r requirements.txt"
 # command to run tests
 script: nosetests
+services:
+  - redis-server
+env:
+  global: 
+    - REDIS_HOST_TEST=localhost
+    - REDIS_PORT_TEST=6379
