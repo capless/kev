@@ -1,13 +1,19 @@
 import boto3
 import json
-import redis
+import re
 
 from kev.backends import DocDB
+
 
 class S3DB(DocDB):
 
     db_class = boto3.resource
     backend_id = 's3'
+    doc_id_string = '{doc_id}:id:{backend_id}:{class_name}'
+    index_pattern = r'^(?P<backend_id>[-\w]+):(?P<class_name>[-\w]+)' \
+                    ':indexes:(?P<index_name>[-\w]+):(?P<index_value>' \
+                    '[-\W\w\s]+)/(?P<doc_id>[-\w]+):id:' \
+                    '(?P<backend_id_b>[-\w]+):(?P<class_name_b>[-\w]+)$'
 
     def __init__(self,**kwargs):
 
@@ -24,24 +30,27 @@ class S3DB(DocDB):
         return '{0}:all/'.format(
             doc_class.get_class_name())
 
-    def doc_all_id(self,doc_class,doc_id):
-        return '{0}{1}'.format(self.all_prefix(doc_class),doc_id)
+    def get_full_id(self,doc_class,doc_id):
+        return '{}{}'.format(self.all_prefix(doc_class),doc_id)
 
     def save(self,doc_obj):
         doc_obj, doc = self._save(doc_obj)
-        self._db.Object(self.bucket, self.doc_all_id(doc_obj.__class__,doc_obj._id)).put(
+        self._db.Object(self.bucket, self.get_full_id(
+            doc_obj.__class__,doc_obj._id)).put(
                 Body=json.dumps(doc))
         self.add_indexes(doc_obj, doc)
         self.remove_indexes(doc_obj)
-
-        # doc_obj._doc = doc_obj.process_doc_kwargs(doc)
         return doc_obj
 
     def get(self,doc_class,doc_id):
-
         doc = json.loads(self._db.Object(
-                self.bucket, doc_class.get_doc_id(
-                doc_id)).get().get('Body').read().decode())
+            self.bucket, self.get_full_id(doc_class,
+            doc_class.get_doc_id(doc_id))).get().get('Body').read().decode())
+        return doc_class(**doc)
+
+    def get_raw(self, doc_class, doc_id):
+        doc = json.loads(self._db.Object(self.bucket,doc_id).get().get(
+            'Body').read().decode())
         return doc_class(**doc)
 
     def flush_db(self):
@@ -50,44 +59,48 @@ class S3DB(DocDB):
             i.delete()
 
     def delete(self, doc_obj):
-        self._db.Object(self.bucket,doc_obj._id).delete()
+        self._db.Object(
+            self.bucket,
+            self.get_full_id(doc_obj.__class__,doc_obj._id)).delete()
         self.remove_from_model_set(doc_obj)
         doc_obj._index_change_list = doc_obj.get_indexes()
         self.remove_indexes(doc_obj)
 
-
     def all(self,doc_class):
         all_prefix = self.all_prefix(doc_class)
-        id_tail = ':id:{0}:{1}'.format(self.backend_id,doc_class.get_class_name())
-        id_list = [id.key.replace(id_tail,'') for id in self._indexer.objects.filter(Prefix=all_prefix)]
+        id_list = [id.key for id in self._indexer.objects.filter(Prefix=all_prefix)]
+
         for id in id_list:
-            yield self.get(doc_class,id)
+            yield self.get_raw(doc_class,id)
 
     #Indexing Methods
 
     def remove_from_model_set(self, doc_obj):
-        self._db.Object(self.bucket, '{0}:all/{1}'.format(
-            doc_obj.__class__.__name__.lower(), doc_obj._id)).delete()
+        self._db.Object(self.bucket, self.get_full_id(
+            doc_obj.__class__,doc_obj._id)).delete()
 
     def remove_indexes(self, doc_obj):
         for index_v in doc_obj._index_change_list:
-            self._db.Object('{0}/{1}'.format(index_v, doc_obj._id)).delete()
+            self._db.Object(self.bucket,'{0}/{1}'.format(index_v, doc_obj._id)).delete()
 
     def add_indexes(self, doc_obj, doc):
         index_list = doc_obj.get_indexed_props()
         for prop in index_list:
             index_value = doc.get(prop)
-            if index_value:
-                self._db.Object(self.bucket,'{0}/{1}'.format(
-                    doc_obj.get_index_name(prop, index_value),
-                    doc_obj._id)).put(Body='')
+            # if index_value:
+            self._db.Object(self.bucket,'{0}/{1}'.format(
+                doc_obj.get_index_name(prop, index_value),
+                doc_obj._id)).put(Body='')
+
 
     def evaluate(self, filters_list, doc_class):
-        print(filters_list)
         if len(filters_list) == 1:
+            filter_value = filters_list[0]
             id_list = self._indexer.objects.filter(Prefix=filters_list[0])
+
         else:
             raise ValueError('There should only be one filter for S3 backends')
         for id in id_list:
-            print(self.parse_id(id.key))
-            yield doc_class.get(self.parse_id(id.key))
+
+            index_dict = re.match(self.index_pattern,id.key).groupdict()
+            yield self.get(doc_class,index_dict['doc_id'])

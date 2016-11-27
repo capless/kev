@@ -57,7 +57,8 @@ class S3RedisDB(RedisDB):
         pipe.execute()
 
     def all(self,doc_class):
-        id_list = [int(id.rsplit(b':',1)[1]) for id in self._indexer.smembers('{0}:all'.format(
+
+        id_list = [self.parse_id(id) for id in self._indexer.smembers('{0}:all'.format(
             doc_class.get_class_name()))]
         for id in id_list:
             yield self.get(doc_class,id)
