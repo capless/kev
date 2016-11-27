@@ -13,10 +13,6 @@ class RedisDB(DocDB):
     def __init__(self,**kwargs):
         self._db = self._indexer = self.db_class(kwargs['host'],port=kwargs['port'])
 
-    def create_pk(self,doc_obj):
-        pk = self._indexer.incr('{0}:{1}:id._pk'.format(self.backend_id,doc_obj.get_class_name()))
-        doc_obj.set_pk('{0}:{1}:id:{2}'.format(self.backend_id,doc_obj.get_class_name(), pk))
-        return doc_obj
 
     #CRUD Operations
 

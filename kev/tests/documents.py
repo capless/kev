@@ -21,7 +21,7 @@ class TestDocument(Document):
         return self.name
 
     class Meta:
-        use_db = 's3'
+        use_db = 's3redis'
         handler = kev_handler
 
 
@@ -30,10 +30,14 @@ class BaseTestDocumentSlug(TestDocument):
     email = CharProperty(required=True,unique=True)
     city = CharProperty(required=True,index=True)
 
-
 class S3TestDocumentSlug(BaseTestDocumentSlug):
     class Meta:
         use_db = 's3'
+        handler = kev_handler
+
+class S3RedisTestDocumentSlug(BaseTestDocumentSlug):
+    class Meta:
+        use_db = 's3redis'
         handler = kev_handler
 
 
@@ -56,18 +60,18 @@ class DocumentTestCase(KevTestCase):
         self.assertEqual(obj.no_subscriptions,1)
         self.assertEqual(obj._doc.get('no_subscriptions'), 1)
         self.assertEqual(obj.gpa,None)
-        self.assertFalse('gpa' in obj._doc)
+
 
     def test_get_unique_props(self):
-        obj = S3TestDocumentSlug(name='Brian',slug='brian',email='brian@host.com',
+        obj = S3RedisTestDocumentSlug(name='Brian',slug='brian',email='brian@host.com',
                                  city='Greensboro',gpa=4.0)
         self.assertEqual(obj.get_unique_props().sort(),['name','slug','email'].sort())
 
     def test_set_indexed_prop(self):
-        obj = S3TestDocumentSlug(name='Brian', slug='brian', email='brian@host.com',
+        obj = S3RedisTestDocumentSlug(name='Brian', slug='brian', email='brian@host.com',
                                  city='Greensboro', gpa=4.0)
         obj.name = 'Tariq'
-        self.assertEqual(obj._index_change_list,['s3:s3testdocumentslug:indexes:name:brian'])
+        self.assertEqual(obj._index_change_list,['s3redis:s3redistestdocumentslug:indexes:name:brian'])
 
     def test_validate_valid(self):
         t1 = TestDocument(name='DNSly',is_active=False,no_subscriptions=2,gpa=3.5)
@@ -119,9 +123,9 @@ class DocumentTestCase(KevTestCase):
 
 
 
-class S3QueryTestCase(KevTestCase):
+class S3RedisQueryTestCase(KevTestCase):
 
-    doc_class = S3TestDocumentSlug
+    doc_class = S3RedisTestDocumentSlug
 
     def setUp(self):
 
@@ -201,9 +205,20 @@ class S3QueryTestCase(KevTestCase):
                           'doc_type':['goo','foo']},c)
 
 
-class RedisQueryTestCase(S3QueryTestCase):
+class RedisQueryTestCase(S3RedisQueryTestCase):
 
     doc_class = RedisTestDocumentSlug
+
+
+class S3QueryTestCase(S3RedisQueryTestCase):
+
+    doc_class = S3TestDocumentSlug
+
+    def test_queryset_chaininig(self):
+        qs = self.doc_class.objects().filter(
+            {'name': 'Goo and Sons'}).filter({'city': 'Durham'})
+        with self.assertRaises(ValueError):
+            qs.count()
 
 
 if __name__ == '__main__':
