@@ -119,7 +119,7 @@ ec640abfd6
 ```
 #####Get One Document
 ```python
->>>TestDocument.get(1)
+>>>TestDocument.get('ec640abfd6')
 <TestDocument: Kev:ec640abfd6>
 
 >>>TestDocument.objects().get({'state':'NC'})
