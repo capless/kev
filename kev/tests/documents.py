@@ -198,7 +198,7 @@ class S3RedisQueryTestCase(KevTestCase):
 
     def test_wildcard_queryset_chaining(self):
         qs = self.doc_class.objects().filter(
-            {'name': 'Goo and Sons'}).filter({'city': 'Du*ham'})
+            {'name': 'Goo*'}).filter({'city': 'Du*ham'})
         self.assertEqual(1, qs.count())
         self.assertEqual(self.t1.name, qs[0].name)
 
