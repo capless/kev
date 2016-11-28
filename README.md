@@ -1,5 +1,5 @@
 # kev
-K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and ElasticSearch. Currently supported backends are Redis and a S3/Redis hybrid backend.
+K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases. Currently supported backends are Redis, S3, and a S3/Redis hybrid backend.
 
 [![Build Status](https://travis-ci.org/kevproject/kev.svg?branch=master)](https://travis-ci.org/kevproject/kev)
 
@@ -23,6 +23,12 @@ kev_handler = KevHandler({
     's3':{
         'backend':'kev.backends.s3.db.S3DB',
         'connection':{
+            'bucket':'your-bucket-name'
+        }
+    },
+    's3redis':{
+        'backend':'kev.backends.s3redis.db.S3RedisDB',
+        'connection':{
             'bucket':'your-bucket-name',
             'indexer':{
                 'host':'your.redis.host.com',
@@ -33,7 +39,7 @@ kev_handler = KevHandler({
     'redis': {
         'backend': 'kev.backends.redis.db.RedisDB',
         'connection': {
-            'host': 'your-redis-host.com,
+            'host': 'your-redis-host.com',
             'port': 6379,
         }
     }
@@ -62,7 +68,7 @@ class TestDocument(Document):
         
 
     class Meta:
-        use_db = 's3'
+        use_db = 's3redis'
         handler = kev_handler
 
 ```
@@ -83,13 +89,13 @@ class TestDocument(Document):
 True
 
 >>>kevin.pk
-1
+ec640abfd6
 
 >>>kevin.id
-1
+ec640abfd6
 
 >>>kevin._id
-'testdocument:id:1'
+'ec640abfd6:id:s3redis:testdocument'
 ```
 ####Query Documents
 
@@ -108,33 +114,49 @@ True
 ```python
 >>>TestDocument.all()
 
-[<TestDocument: Kev:1>,<TestDocument: George:2>,<TestDocument: Sally:3>]
+[<TestDocument: Kev:ec640abfd6>,<TestDocument: George:aff7bcfb56>,<TestDocument: Sally:c38a77cfe4>]
 
 ```
 #####Get One Document
 ```python
 >>>TestDocument.get(1)
-<TestDocument: Kev:1>
+<TestDocument: Kev:ec640abfd6>
 
 >>>TestDocument.objects().get({'state':'NC'})
-<TestDocument: Kev:1>
+<TestDocument: Kev:ec640abfd6>
 
 ```
 #####Filter Documents
 ```python
 >>>TestDocument.objects().filter({'state':'VA'})
 
-[<TestDocument: George:2>,<TestDocument: Sally:3>]
+[<TestDocument: George:aff7bcfb56>,<TestDocument: Sally:c38a77cfe4>]
 
 >>>TestDocument.objects().filter({'no_subscriptions':3})
-[<TestDocument: Kev:1>,<TestDocument: George:2>]
+[<TestDocument: Kev:ec640abfd6>,<TestDocument: George:aff7bcfb56>]
 
 >>>TestDocument.objects().filter({'no_subscriptions':3,'state':'NC'})
-[<TestDocument: Kev:1>]
+[<TestDocument: Kev:ec640abfd6>]
 ```
 #####Chain Filters
+The chain filters feature is only available for Redis and S3/Redis backends.
 ```python
 >>>TestDocument.objects().filter({'no_subscriptions':3}).filter({'state':'NC'})
-[<TestDocument: Kev:1>]
+[<TestDocument: Kev:ec640abfd6>]
 
+```
+
+#####Wildcard Filters
+Wildcard filters currently only work with the Redis and S3/Redis backend. Use prefixes with the S3 backend.
+```python
+>>>TestDocument.objects().filter({'state':'N*'})
+[<TestDocument: Kev:ec640abfd6>]
+
+```
+
+#####Prefix Filters
+Prefix filters currently only work with the S3 backend. Use wildcard filters with the Redis or S3/Redis backends.
+```python
+>>>TestDocument.objects().filter({'state':'N'})
+[<TestDocument: Kev:ec640abfd6>]
 ```
