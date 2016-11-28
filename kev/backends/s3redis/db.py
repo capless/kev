@@ -64,9 +64,6 @@ class S3RedisDB(RedisDB):
             yield self.get(doc_class,id)
 
     def evaluate(self, filters_list, doc_class):
-        if len(filters_list) == 1:
-            id_list = self._indexer.smembers(filters_list[0])
-        else:
-            id_list = self._indexer.sinter(*filters_list)
+        id_list = self.get_id_list(filters_list)
         for id in id_list:
             yield doc_class.get(self.parse_id(id))
