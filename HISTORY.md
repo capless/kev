@@ -3,7 +3,7 @@
 ###0.7
 
 - Added S3 only backend
-- Added wildcard filtering for Redis and S3/Redis backends
+- Added wildcard filtering for Redis and S3/Redis backends (credit: JamieCressey)
 - Updated README docs
 - Added HISTORY.md
 
