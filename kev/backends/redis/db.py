@@ -10,33 +10,34 @@ class RedisDB(DocDB):
     db_class = redis.StrictRedis
     backend_id = 'redis'
 
-    def __init__(self,**kwargs):
-        self._db = self._indexer = self.db_class(kwargs['host'],port=kwargs['port'])
+    def __init__(self, **kwargs):
+        self._db = self._indexer = self.db_class(
+            kwargs['host'], port=kwargs['port'])
 
 
-    #CRUD Operations
+    # CRUD Operations
 
-    def save(self,doc_obj):
+    def save(self, doc_obj):
         doc_obj, doc = self._save(doc_obj)
         pipe = self._db.pipeline()
         pipe.hmset(doc_obj._id, doc)
 
-        pipe = self.add_to_model_set(doc_obj,pipe)
+        pipe = self.add_to_model_set(doc_obj, pipe)
         pipe = self.add_indexes(doc_obj, doc, pipe)
         pipe = self.remove_indexes(doc_obj, pipe)
         pipe.execute()
         # doc_obj._doc = doc_obj.process_doc_kwargs(doc)
         return doc_obj
 
-    def delete(self,doc_obj):
+    def delete(self, doc_obj):
         pipe = self._db.pipeline()
         pipe.delete(doc_obj._doc['_id'])
-        pipe = self.remove_from_model_set(doc_obj,pipe)
+        pipe = self.remove_from_model_set(doc_obj, pipe)
         doc_obj._index_change_list = doc_obj.get_indexes()
         pipe = self.remove_indexes(doc_obj, pipe)
         pipe.execute()
 
-    def all(self,cls):
+    def all(self, cls):
 
         id_list = self._db.smembers('{0}:all'.format(
             cls.get_class_name()))
@@ -59,14 +60,20 @@ class RedisDB(DocDB):
     def flush_db(self):
         self._db.flushdb()
 
-    #Indexing Methods
+    # Indexing Methods
 
     def add_to_model_set(self, doc_obj, pipeline):
-        pipeline.sadd('{0}:all'.format(doc_obj.__class__.__name__.lower()), doc_obj._id)
+        pipeline.sadd(
+            '{0}:all'.format(
+                doc_obj.__class__.__name__.lower()),
+            doc_obj._id)
         return pipeline
 
     def remove_from_model_set(self, doc_obj, pipeline):
-        pipeline.srem('{0}:all'.format(doc_obj.__class__.__name__.lower()), doc_obj._id)
+        pipeline.srem(
+            '{0}:all'.format(
+                doc_obj.__class__.__name__.lower()),
+            doc_obj._id)
         return pipeline
 
     def remove_indexes(self, doc_obj, pipeline):
@@ -85,10 +92,7 @@ class RedisDB(DocDB):
         return pipeline
 
     def evaluate(self, filters_list, doc_class):
-        if len(filters_list) == 1:
-            id_list = self._db.smembers(filters_list[0])
-        else:
-            id_list = self._db.sinter(*filters_list)
+        id_list = self.get_id_list(filters_list)
         pipe = self._db.pipeline()
         for id in id_list:
             pipe.hgetall(id)
