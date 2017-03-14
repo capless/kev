@@ -11,7 +11,7 @@ from kev.exceptions import DocNotFoundError
 class DynamoDB(DocDB):
 
     db_class = boto3.resource
-    backend_id = 'dynamo'
+    backend_id = 'dynamodb'
 
     def __init__(self, **kwargs):
         if 'aws_secret_access_key' in kwargs and 'aws_access_key_id' in kwargs:

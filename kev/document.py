@@ -135,7 +135,7 @@ class BaseDocument(object):
 
     @classmethod
     def get_index_name(cls, prop, index_value):
-        if cls.get_db().backend_id != 'dynamo':
+        if cls.get_db().backend_id != 'dynamodb':
             index_value = index_value.lower()
         return '{0}:{1}:indexes:{2}:{3}'.format(
             cls.get_db().backend_id.lower(),

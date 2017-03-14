@@ -57,7 +57,7 @@ class RedisTestDocumentSlug(BaseTestDocumentSlug):
 class DynamoTestDocumentSlug(BaseTestDocumentSlug):
 
     class Meta:
-        use_db = 'dynamo'
+        use_db = 'dynamodb'
         handler = kev_handler
 
 
