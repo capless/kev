@@ -331,6 +331,16 @@ class DynamoTestCase(KevTestCase):
         self.assertEqual(1, qs.count())
         self.assertEqual(self.t1.name, qs[0].name)
 
+    def test_more_than_hundred_objects(self):
+        for i in range(110):
+            doc = self.doc_class(name='Object_{0}'.format(i), slug='object-{0}'.format(i), gpa=4.6,
+                                 email='object_{0}@ymca.com'.format(i), city='Durham')
+            doc.save()
+        qs = self.doc_class.all()
+        self.assertEqual(113, len(list(qs)))
+        qs = self.doc_class.objects().filter({'city': 'Durham'})
+        self.assertEqual(112, qs.count())
+
 
 if __name__ == '__main__':
     unittest.main()
