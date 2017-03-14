@@ -25,6 +25,12 @@ kev_handler = KevHandler({
             'host': env('REDIS_HOST_TEST'),
             'port': env('REDIS_PORT_TEST'),
         }
+    },
+    'dynamo': {
+        'backend': 'kev.backends.dynamo.db.DynamoDB',
+        'connection': {
+            'table': env('DYNAMO_TABLE_TEST'),
+        }
     }
 })
 
