@@ -56,11 +56,11 @@ class DynamoDB(DocDB):
             self._indexer.delete_item(Key={'_id': i['_id']})
 
     # # Indexing Methods
-    def get_id_list(self, filters_list):
+    def get_doc_list(self, filters_list):
         result = []
-        l = self.parse_filters(filters_list)
         list_of_sets = []
-        for filter in l:
+        docs_hash = {}
+        for filter in self.parse_filters(filters_list):
             ids_set = set()
             index, value = filter.split(':')[3:5]
             index_name = '{0}-index'.format(index)
@@ -70,9 +70,11 @@ class DynamoDB(DocDB):
             else:
                 response = self._indexer.query(KeyConditionExpression=key_expression)
             for item in response['Items']:
+                docs_hash[item['_id']] = item
                 ids_set.add(item['_id'])
             list_of_sets.append(ids_set)
-            result = list(set.intersection(*list_of_sets))
+        for doc_id in set.intersection(*list_of_sets):
+            result.append(docs_hash[doc_id])
         return result
 
     def parse_filters(self, filters):
@@ -84,6 +86,6 @@ class DynamoDB(DocDB):
         return list(s)
 
     def evaluate(self, filters_list, doc_class):
-         id_list = self.get_id_list(filters_list)
-         for id in id_list:
-             yield doc_class.get(self.parse_id(id))
+         docs_list = self.get_doc_list(filters_list)
+         for doc in docs_list:
+             yield doc_class(**doc)
