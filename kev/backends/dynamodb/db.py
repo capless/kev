@@ -5,19 +5,19 @@ from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
 from kev.backends import DocDB
-from kev.exceptions import DocNotFoundError
+from kev.exceptions import DocNotFoundError, ResourceError
 
 
 class DynamoDB(DocDB):
 
-    db_class = boto3.resource
+    db_class = boto3
     backend_id = 'dynamodb'
 
     def __init__(self, **kwargs):
         if 'aws_secret_access_key' in kwargs and 'aws_access_key_id' in kwargs:
             boto3.Session(aws_secret_access_key=kwargs['aws_secret_access_key'],
                 aws_access_key_id=kwargs['aws_access_key_id'])
-        self._db = boto3.resource('dynamodb')
+        self._db = self.db_class.resource('dynamodb')
         self.table = kwargs['table']
         self._indexer = self._db.Table(self.table)
 
@@ -32,7 +32,7 @@ class DynamoDB(DocDB):
             self._indexer.put_item(Item=doc)
         except ClientError as e:
             if e.response['Error']['Code'] == 'ResourceNotFoundException':
-                print('Table doesn\'t exist.')
+                raise ResourceError('Table doesn\'t exist.')
         return doc_obj
 
     def delete(self, doc_obj):
