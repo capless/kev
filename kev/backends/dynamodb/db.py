@@ -1,7 +1,7 @@
 import decimal
 
 import boto3
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr, And
 from botocore.exceptions import ClientError
 
 from kev.backends import DocDB
@@ -58,23 +58,26 @@ class DynamoDB(DocDB):
     # # Indexing Methods
     def get_doc_list(self, filters_list):
         result = []
-        list_of_sets = []
-        docs_hash = {}
-        for filter in self.parse_filters(filters_list):
-            ids_set = set()
+        index_name = None
+        key_expression = None
+        filter_expression_list = []
+        query_param = {}
+        for idx, filter in enumerate(self.parse_filters(filters_list)):
             index, value = filter.split(':')[3:5]
-            index_name = '{0}-index'.format(index)
-            key_expression = Key(index).eq(value)
-            if index != '_id':
-                response = self._indexer.query(IndexName=index_name,KeyConditionExpression=key_expression)
+            if idx == 0:
+                index_name = '{0}-index'.format(index)
+                key_expression = Key(index).eq(value)
             else:
-                response = self._indexer.query(KeyConditionExpression=key_expression)
-            for item in response['Items']:
-                docs_hash[item['_id']] = item
-                ids_set.add(item['_id'])
-            list_of_sets.append(ids_set)
-        for doc_id in set.intersection(*list_of_sets):
-            result.append(docs_hash[doc_id])
+                filter_expression_list.append(Attr(index).eq(value))
+        if len(filter_expression_list) > 1:
+            query_param['FilterExpression'] = And(*filter_expression_list)
+        elif len(filter_expression_list) == 1:
+            query_param['FilterExpression'] = filter_expression_list[0]
+        if index_name != '_id':
+            query_param['IndexName'] = index_name
+        response = self._indexer.query(KeyConditionExpression=key_expression, **query_param)
+        for item in response['Items']:
+            result.append(item)
         return result
 
     def parse_filters(self, filters):
