@@ -17,7 +17,7 @@ class DynamoDB(DocDB):
         if 'aws_secret_access_key' in kwargs and 'aws_access_key_id' in kwargs:
             boto3.Session(aws_secret_access_key=kwargs['aws_secret_access_key'],
                 aws_access_key_id=kwargs['aws_access_key_id'])
-        self._db = self.db_class.resource('dynamodb')
+        self._db = self.db_class.resource('dynamodb', endpoint_url=kwargs.get('endpoint_url', None))
         self.table = kwargs['table']
         self._indexer = self._db.Table(self.table)
 
