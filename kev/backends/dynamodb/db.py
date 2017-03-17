@@ -103,25 +103,19 @@ class DynamoDB(DocDB):
         # TODO: allow configuration of auto override
         self.log.debug("starting save " + str((doc_obj)))
         doc_obj, doc = self._save(doc_obj)
-        self.log.debug("sdfsdfsdf")
         resp = self._indexer.put_item(Item=doc)
-        self.log.debug("save resp: " + str(resp))
-        self.log.debug(resp)
 
-
-        # self._db.Object(self.table, self.get_full_id(
-        #     doc_obj.__class__,doc_obj._id)).put(
-        #         Body=json.dumps(doc))
-        # self.add_indexes(doc_obj, doc)
-        # self.remove_indexes(doc_obj)
+        self.log.debug("endind save")
         return doc_obj
 
     def get(self,doc_class,doc_id):
-        self.log.debug("starting get")
-        doc = json.loads(self._db.Object(
-            self.table, self.get_full_id(doc_class,
-            doc_class.get_doc_id(doc_id))).get().get('Body').read().decode())
-        return doc_class(**doc)
+        self.log.debug("*starting get")
+        # self.log.debug(doc_class)
+        # self.log.debug(doc_id)
+
+        doc = self._indexer.get_item(Key=doc_id)
+
+        return doc_class(**(doc["Item"]))
 
     def flush_db(self):
         self.log.debug("starting flush_db")
@@ -137,14 +131,14 @@ class DynamoDB(DocDB):
         self.log.debug("Primary keys: {}".format(str(keys)))
 
         # TODO try table.load() instead of direct client call
-# TODO what does get_available_subresources return?
+        # TODO what does get_available_subresources return?
 
         # scan table to get item list
         resp  = self._indexer.scan()
         items = resp["Items"]
         self.log.debug("Items to delete: {}".format(len(items)))
 
-        # delete items
+        # delete items 1 by 1
         if len(items) == 0:
             return
         with self._indexer.batch_writer() as batch:
@@ -154,22 +148,34 @@ class DynamoDB(DocDB):
                 batch.delete_item(Key=pk)
 
     def delete(self, doc_obj):
-        self.log.debug("starting delete")
-        self._db.Object(
-            self.bucket,
-            self.get_full_id(doc_obj.__class__,doc_obj._id)).delete()
-        self.remove_from_model_set(doc_obj)
-        doc_obj._index_change_list = doc_obj.get_indexes()
-        self.remove_indexes(doc_obj)
+        # TODO not working!!!!
+        self.log.debug("starting delete " + str(doc_obj))
+        self._indexer.delete_item(Key=doc_id)
+
+        # self._db.Object(
+        #     self.bucket,
+        #     self.get_full_id(doc_obj.__class__,doc_obj._id)).delete()
+        # self.remove_from_model_set(doc_obj)
+        # doc_obj._index_change_list = doc_obj.get_indexes()
+        # self.remove_indexes(doc_obj)
 
     def all(self,doc_class):
+        # TODO verify object type returned
         self.log.debug("starting all")
         # TODO: verify scans > 1MB still work
-        all_prefix = self.all_prefix(doc_class)
-        id_list = [id.key for id in self._indexer.tables.filter(Prefix=all_prefix)]
-
+        resp  = self._indexer.scan()  # TODO filter scan
+        id_list = resp["Items"]
+        self.log.debug("respssss: '{}', {}".format(len(id_list),str(resp)))
         for id in id_list:
-            yield self.get_raw(doc_class,id)
+            yield id
+        self.log.debug("ending all")
+
+
+        # all_prefix = self.all_prefix(doc_class)
+        # id_list = [id.key for id in self._indexer.tables.filter(Prefix=all_prefix)]
+
+        # for id in id_list:
+        #     yield self.get_raw(doc_class,id)
 
     # Indexing Methods
 

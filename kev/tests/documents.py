@@ -46,13 +46,17 @@ class S3RedisTestDocumentSlug(BaseTestDocumentSlug):
         use_db = 's3redis'
         handler = kev_handler
 
-
 class RedisTestDocumentSlug(BaseTestDocumentSlug):
 
     class Meta:
         use_db = 'redis'
         handler = kev_handler
 
+class DynamoDBTestDocumentSlug(BaseTestDocumentSlug):
+
+    class Meta:
+        use_db = 'dynamodb'
+        handler = kev_handler
 
 class DocumentTestCase(KevTestCase):
 
@@ -273,6 +277,52 @@ class S3QueryTestCase(S3RedisQueryTestCase):
 
     def test_non_unique_wildcard_filter(self):
         pass
+
+# nosetests --stop -i /dynamo/
+class DynamoDbQueryTestCase(KevTestCase):
+
+    doc_class = DynamoDBTestDocumentSlug
+
+    def test_dynamodb_save_flush(self):
+        t1 = self.doc_class(name='Great Mountain',
+            slug='great-mountain',
+            email='great@mountain.com',
+            city='Charlotte')
+        t1.save()
+        self.assertEqual(1, len(list(self.doc_class().all())))
+        self.doc_class().flush_db()
+        self.assertEqual(0, len(list(self.doc_class().all())))
+
+    def test_dynamodb_all(self):
+        self.assertEqual(0, len(list(self.doc_class().all())))
+        t1 = self.doc_class(name='Rocky Mountain',
+            slug='rocky-mountain',
+            email='rocky@mountain.com',
+            city='Philly')
+        t1.save()
+        self.assertEqual(1, len(list(self.doc_class().all())))
+
+    def test_dynamodb_get_delete(self):
+        t1 = self.doc_class(name='Snowy Mountain',
+            slug='snowy-mountain',
+            email='snowy@mountain.com',
+            city='Hilly')
+        t1.save()
+
+        # use get to validate item succesfully saved
+        pk = {'slug': t1.slug}
+        t2 = self.doc_class().get(pk)
+        self.assertEqual(t1.email,t2.email)
+
+        # delete, perform get again
+        t2.delete()
+        t3 = self.doc_class().get(pk)
+        self.assertEqual(None, t3)
+
+        self.doc_class().flush_db()
+
+    # def evaluate(self, filters_list, doc_class):
+
 
 if __name__ == '__main__':
     unittest.main()
