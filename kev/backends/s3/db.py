@@ -96,7 +96,7 @@ class S3DB(DocDB):
     def evaluate(self, filters_list, doc_class):
         if len(filters_list) == 1:
             filter_value = filters_list[0]
-            id_list = self._indexer.objects.filter(Prefix=filters_list[0])
+            id_list = self._indexer.objects.filter(Prefix=filter_value)
 
         else:
             raise ValueError('There should only be one filter for S3 backends')
