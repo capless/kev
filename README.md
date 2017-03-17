@@ -1,5 +1,5 @@
 # kev
-K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases. Currently supported backends are Redis, S3, and a S3/Redis hybrid backend.
+K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases. Currently supported backends are Redis, S3, DynamoDB and a S3/Redis hybrid backend.
 
 [![Build Status](https://travis-ci.org/kevproject/kev.svg?branch=master)](https://travis-ci.org/kevproject/kev)
 
@@ -41,6 +41,12 @@ kev_handler = KevHandler({
         'connection': {
             'host': 'your-redis-host.com',
             'port': 6379,
+        }
+    },
+    'dynamodb': {
+        'backend': 'kev.backends.dynamodb.db.DynamoDB',
+        'connection': {
+            'table': 'your-dynamodb-table',
         }
     }
 })
@@ -160,3 +166,14 @@ Prefix filters currently only work with the S3 backend. Use wildcard filters wit
 >>>TestDocument.objects().filter({'state':'N'})
 [<TestDocument: Kev:ec640abfd6>]
 ```
+###DynamoDB setup
+####Create a table
+`Table name` should be between 3 and 255 characters long. (A-Z,a-z,0-9,_,-,.)
+`Primary key` (partition key) should be equal to `_id`
+
+####Filter Documents
+If you want to make `filter()` queries, you should create an index for every attribute that you want to filter by.
+`Primary key` should be equal to attribute name.
+`Index name` should be equal to attribute name postfixed by `-index`. (It will be filled by AWS automatically).
+For example: for attribute `name`, Primary key = `name` and index name `name-index`.
+`Projected attributes`: `All`.
