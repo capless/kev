@@ -17,7 +17,7 @@ class DynamoDB(DocDB):
         if 'aws_secret_access_key' in kwargs and 'aws_access_key_id' in kwargs:
             boto3.Session(aws_secret_access_key=kwargs['aws_secret_access_key'],
                 aws_access_key_id=kwargs['aws_access_key_id'])
-        self._db = self.db_class.resource('dynamodb')
+        self._db = self.db_class.resource('dynamodb', endpoint_url=kwargs.get('endpoint_url', None))
         self.table = kwargs['table']
         self._indexer = self._db.Table(self.table)
 
@@ -57,16 +57,14 @@ class DynamoDB(DocDB):
 
     # # Indexing Methods
     def get_doc_list(self, filters_list):
-        result = []
         index_name = None
-        key_expression = None
         filter_expression_list = []
         query_param = {}
-        for idx, filter in enumerate(self.parse_filters(filters_list)):
+        for idx, filter in enumerate(filters_list):
             index, value = filter.split(':')[3:5]
             if idx == 0:
                 index_name = '{0}-index'.format(index)
-                key_expression = Key(index).eq(value)
+                query_param['KeyConditionExpression'] = Key(index).eq(value)
             else:
                 filter_expression_list.append(Attr(index).eq(value))
         if len(filter_expression_list) > 1:
@@ -75,18 +73,8 @@ class DynamoDB(DocDB):
             query_param['FilterExpression'] = filter_expression_list[0]
         if index_name != '_id':
             query_param['IndexName'] = index_name
-        response = self._indexer.query(KeyConditionExpression=key_expression, **query_param)
-        for item in response['Items']:
-            result.append(item)
-        return result
-
-    def parse_filters(self, filters):
-        s = set()
-        for f in filters:
-            s.add(f)
-        if not s:
-            return filters
-        return list(s)
+        response = self._indexer.query(**query_param)
+        return response['Items']
 
     def evaluate(self, filters_list, doc_class):
          docs_list = self.get_doc_list(filters_list)
