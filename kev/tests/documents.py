@@ -4,9 +4,10 @@ import datetime
 from kev import (Document,CharProperty,DateTimeProperty,
                  DateProperty,BooleanProperty,IntegerProperty,
                  FloatProperty)
-from kev.exceptions import ValidationException, QueryError
+from kev.exceptions import QueryError
 from kev.query import combine_list, combine_dicts
 from kev.testcase import kev_handler,KevTestCase
+from valley.exceptions import ValidationException
 
 
 class TestDocument(Document):

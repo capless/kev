@@ -3,13 +3,13 @@ import datetime
 from kev.properties import (BaseProperty, CharProperty, DateProperty,
                             DateTimeProperty, FloatProperty, IntegerProperty,
                             BooleanProperty)
-from kev.exceptions import ValidationException
+from valley.exceptions import ValidationException
 
 
 class PropertiesTestCase(unittest.TestCase):
 
     def test_base_property(self):
-        prop = BaseProperty()
+        prop = BaseProperty(required=True)
         self.assertEqual(None, prop.default_value)
         with self.assertRaises(ValidationException) as vm:
             prop.validate(None, 'first_name')
@@ -29,7 +29,9 @@ class PropertiesTestCase(unittest.TestCase):
 
     def test_char_property_validators_set(self):
         prop = CharProperty()
-        self.assertEqual(2, len(prop.validators))
+        self.assertEqual(1, len(prop.validators))
+        propb = CharProperty(required=True,max_length=20,min_length=2)
+        self.assertEqual(4, len(propb.validators))
 
     def test_char_property_validate(self):
         prop = CharProperty(required=True)
@@ -55,7 +57,9 @@ class PropertiesTestCase(unittest.TestCase):
 
     def test_integer_property_validators_set(self):
         prop = IntegerProperty()
-        self.assertEqual(2, len(prop.validators))
+        self.assertEqual(1, len(prop.validators))
+        propb = IntegerProperty(required=True)
+        self.assertEqual(2, len(propb.validators))
 
     def test_integer_property_validate(self):
         prop = IntegerProperty(required=True)
@@ -81,7 +85,9 @@ class PropertiesTestCase(unittest.TestCase):
 
     def test_float_property_validators_set(self):
         prop = FloatProperty()
-        self.assertEqual(2, len(prop.validators))
+        self.assertEqual(1, len(prop.validators))
+        propb = FloatProperty(required=True)
+        self.assertEqual(2, len(propb.validators))
 
     def test_float_property_validate(self):
         prop = FloatProperty(required=True)

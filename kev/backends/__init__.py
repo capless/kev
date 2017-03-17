@@ -4,7 +4,7 @@ import hashlib
 import uuid
 import datetime
 
-from kev.exceptions import ValidationException
+from valley.exceptions import ValidationException
 from kev.utils import get_doc_type
 
 

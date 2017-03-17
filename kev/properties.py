@@ -9,7 +9,7 @@ import time
 import six
 from valley import BooleanValidator
 
-from kev.exceptions import ValidationException
+from valley.exceptions import ValidationException
 from valley.mixins import (VariableMixin, CharVariableMixin, BooleanMixin,
                            IntegerVariableMixin, FloatVariableMixin,
                            DateMixin, DateTimeMixin)
@@ -20,7 +20,7 @@ class BaseProperty(VariableMixin, object):
     def __init__(
         self,
         default_value=None,
-        required=True,
+        required=False,
         index=False,
         unique=False,
         validators=[],
