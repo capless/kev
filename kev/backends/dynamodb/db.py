@@ -57,24 +57,28 @@ class DynamoDB(DocDB):
 
     # # Indexing Methods
     def get_doc_list(self, filters_list):
+        query_params = self.parse_filters(filters_list)
+        response = self._indexer.query(**query_params)
+        return response['Items']
+
+    def parse_filters(self, filters):
         index_name = None
         filter_expression_list = []
-        query_param = {}
-        for idx, filter in enumerate(filters_list):
+        query_params = {}
+        for idx, filter in enumerate(filters):
             index, value = filter.split(':')[3:5]
             if idx == 0:
                 index_name = '{0}-index'.format(index)
-                query_param['KeyConditionExpression'] = Key(index).eq(value)
+                query_params['KeyConditionExpression'] = Key(index).eq(value)
             else:
                 filter_expression_list.append(Attr(index).eq(value))
         if len(filter_expression_list) > 1:
-            query_param['FilterExpression'] = And(*filter_expression_list)
+            query_params['FilterExpression'] = And(*filter_expression_list)
         elif len(filter_expression_list) == 1:
-            query_param['FilterExpression'] = filter_expression_list[0]
+            query_params['FilterExpression'] = filter_expression_list[0]
         if index_name != '_id':
-            query_param['IndexName'] = index_name
-        response = self._indexer.query(**query_param)
-        return response['Items']
+            query_params['IndexName'] = index_name
+        return query_params
 
     def evaluate(self, filters_list, doc_class):
          docs_list = self.get_doc_list(filters_list)

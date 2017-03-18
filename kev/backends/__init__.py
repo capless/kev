@@ -35,7 +35,8 @@ class DocDB(object):
         doc['_date'] = str(datetime.datetime.now())
         doc['_uuid'] = str(uuid.uuid4())
         hash_pk = hashlib.md5(six.b(json.dumps(doc))).hexdigest()[:10]
-        doc_obj.set_pk(self.doc_id_string.format(doc_id=hash_pk, backend_id=self.backend_id, class_name=doc_obj.get_class_name()))
+        doc_obj.set_pk(self.doc_id_string.format(doc_id=hash_pk,
+            backend_id=self.backend_id, class_name=doc_obj.get_class_name()))
         return doc_obj
 
     def check_unique(self, doc_obj, key, value):

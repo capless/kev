@@ -1,4 +1,4 @@
-import kev.utils
+import valley.utils
 
 
 class KevHandler(object):
@@ -10,7 +10,7 @@ class KevHandler(object):
         self._labels = list()
 
         for db_label, db_info in databases.items():
-            db_klass = kev.utils.import_util(db_info.get('backend'))
+            db_klass = valley.utils.import_util(db_info.get('backend'))
             self._databases[db_label] = db_klass(**db_info.get('connection'))
 
     def get_db(self, db_label):
