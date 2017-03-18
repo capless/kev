@@ -316,9 +316,9 @@ class DynamoDbQueryTestCase(KevTestCase):
 
         # delete, perform get again
         t2.delete()
-        t3 = self.doc_class().get(pk)
-        self.assertEqual(None, t3)
-
+        # TODO keyError?
+        with self.assertRaises(KeyError) as vm:
+            self.doc_class().get(pk)
         self.doc_class().flush_db()
 
     # def evaluate(self, filters_list, doc_class):

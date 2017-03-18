@@ -149,10 +149,28 @@ class DynamoDB(DocDB):
 
     def delete(self, doc_obj):
         # TODO not working!!!!
-        self.log.debug("starting delete " + str(doc_obj))
-        self._indexer.delete_item(Key=doc_id)
+        self.log.debug("````````````starting delete " + str(doc_obj))
+        # for k,v in doc_obj.__dict__.iteritems():
+        #     self.log.debug("----------- {} - {}".format(str(k),str(v)))
 
-        # self._db.Object(
+        # # TODO why do I need to use save?
+        # doc_obj2, doc = self._save(doc_obj)
+        # self.log.debug("1 - " + str(doc_obj))
+        # self.log.debug("2 - " + str(doc_obj2))
+        # self.log.debug("3 - " + str(doc))
+
+        # self._indexer.delete_item(Key=doc)
+
+        resp = self._client.describe_table(TableName=self.table)
+        keys = [k['AttributeName'] for k in resp['Table']['KeySchema']]
+        self.log.debug("Primary keys: {}".format(str(keys)))
+
+        pk = {k: getattr(doc_obj,k) for k in keys}
+        self.log.debug("1- " + str(pk))
+        self._indexer.delete_item(Key=pk)
+
+
+        # self._db.Object
         #     self.bucket,
         #     self.get_full_id(doc_obj.__class__,doc_obj._id)).delete()
         # self.remove_from_model_set(doc_obj)
