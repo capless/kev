@@ -82,7 +82,15 @@ class DynamoDB(DocDB):
 # wait_until_not_exists()
 
 
+    ############################################################################
+    # Desc: dynamodb DB constructor
+    #
+    # @param  kwargs[aws_secret_access_key]; aws secret key
+    # @param  kwargs[aws_access_key_id]; aws acess key id
+    # @param  kwargs[table]; aws dynamodb table name
+    ############################################################################
     def __init__(self,**kwargs):
+        # FUTURE: create helper methods to create/delete tables(useful for testing)
 
         if 'aws_secret_access_key' in kwargs and 'aws_access_key_id' in kwargs:
             boto3.Session(aws_secret_access_key=kwargs['aws_secret_access_key'],
@@ -97,122 +105,119 @@ class DynamoDB(DocDB):
         self.logName  = str(self.__class__.__name__)
         self.log      = logging.getLogger(self.logName)
 
-        # TODO create helper methods to create/delete tables for testing
 
+    ##############################################################################################
     # CRUD Operation Methods
+    ##############################################################################################
 
+    ############################################################################
+    # Desc: query for item using specified document id
+    #
+    # @param  doc_class; document class
+    # @param  doc_id; document id
+    #
+    # @ret Document DynamoDB object list
+    ############################################################################
     def save(self,doc_obj):
         # TODO: allow configuration of auto override
-        self.log.debug("starting save " + str((doc_obj)))
+        self.log.debug("`````````````starting save " + str((doc_obj)))
         doc_obj, doc = self._save(doc_obj)
-        resp = self._indexer.put_item(Item=doc)
+        self._indexer.put_item(Item=doc)
 
-        self.log.debug("endind save")
+        self.log.debug("ending save")
         return doc_obj
 
+
+    ############################################################################
+    # Desc: query for item using specified document id
+    #
+    # @param  doc_class; document class
+    # @param  doc_id; document id
+    #
+    # @ret Document DynamoDB object list
+    ############################################################################
     def get(self,doc_class,doc_id):
-        self.log.debug("*starting get")
-        # self.log.debug(doc_class)
-        # self.log.debug(doc_id)
-
+        self.log.debug("getting item: {}".format(doc_id))
         doc = self._indexer.get_item(Key=doc_id)
-
         return doc_class(**(doc["Item"]))
 
+
+    ############################################################################
+    # Desc: empty table
+    #
+    ############################################################################
     def flush_db(self):
-        self.log.debug("starting flush_db")
-
-        # TODO: improve efficiency for large tables, delete and recreate table
-        # TODO: check UnprocessedItems response for missed items
-
-        # process: scan then delete each item
+        # FUTURE: potentially improve efficiency for large tables, delete and recreate table
 
         # describe table to get primary key
         resp = self._client.describe_table(TableName=self.table)
         keys = [k['AttributeName'] for k in resp['Table']['KeySchema']]
-        self.log.debug("Primary keys: {}".format(str(keys)))
-
-        # TODO try table.load() instead of direct client call
-        # TODO what does get_available_subresources return?
 
         # scan table to get item list
         resp  = self._indexer.scan()
         items = resp["Items"]
-        self.log.debug("Items to delete: {}".format(len(items)))
+        self.log.debug("found {} items to delete".format(len(items)))
 
-        # delete items 1 by 1
+        # delete items using batch delete
         if len(items) == 0:
             return
         with self._indexer.batch_writer() as batch:
             for item in items:
-                self.log.debug("Items to delete: {}".format(str(item)))
                 pk = {k: item[k] for k in keys}
+                self.log.debug("\t deleting: {}".format(pk))
                 batch.delete_item(Key=pk)
 
+
+    ############################################################################
+    # Desc: delete single object from table
+    #
+    # @param  doc_obj; document object to be deleted
+    ############################################################################
     def delete(self, doc_obj):
-        # TODO not working!!!!
-        self.log.debug("````````````starting delete " + str(doc_obj))
-        # for k,v in doc_obj.__dict__.iteritems():
-        #     self.log.debug("----------- {} - {}".format(str(k),str(v)))
-
-        # # TODO why do I need to use save?
+        # # TODO why do I need to use save before the delete?
         # doc_obj2, doc = self._save(doc_obj)
-        # self.log.debug("1 - " + str(doc_obj))
-        # self.log.debug("2 - " + str(doc_obj2))
-        # self.log.debug("3 - " + str(doc))
 
-        # self._indexer.delete_item(Key=doc)
-
+        # get table primary key
         resp = self._client.describe_table(TableName=self.table)
         keys = [k['AttributeName'] for k in resp['Table']['KeySchema']]
-        self.log.debug("Primary keys: {}".format(str(keys)))
 
+        # create key/value dict of primary key for item to be deleted
         pk = {k: getattr(doc_obj,k) for k in keys}
-        self.log.debug("1- " + str(pk))
+
+        # delete item
+        self.log.debug("deleting item: {}".format(pk))
         self._indexer.delete_item(Key=pk)
 
 
-        # self._db.Object
-        #     self.bucket,
-        #     self.get_full_id(doc_obj.__class__,doc_obj._id)).delete()
-        # self.remove_from_model_set(doc_obj)
-        # doc_obj._index_change_list = doc_obj.get_indexes()
-        # self.remove_indexes(doc_obj)
-
+    ############################################################################
+    # Desc: return all currently stored items
+    #
+    # @param  doc_class; document class
+    #
+    # @ret Document DynamoDB object list
+    ############################################################################
     def all(self,doc_class):
-        # TODO verify object type returned
-        self.log.debug("starting all")
         # TODO: verify scans > 1MB still work
-        resp  = self._indexer.scan()  # TODO filter scan
-        id_list = resp["Items"]
-        self.log.debug("respssss: '{}', {}".format(len(id_list),str(resp)))
-        for id in id_list:
-            yield id
-        self.log.debug("ending all")
+        resp = self._indexer.scan()
+        item_list = resp["Items"]
+        self.log.debug("scanning for all items, '{}' found".format(len(item_list)))
 
+        for item in item_list:
+            yield doc_class(**item)
 
-        # all_prefix = self.all_prefix(doc_class)
-        # id_list = [id.key for id in self._indexer.tables.filter(Prefix=all_prefix)]
-
-        # for id in id_list:
-        #     yield self.get_raw(doc_class,id)
-
-    # Indexing Methods
-
-    # create scanner grouping
-    # scan
-    #  check result for LastEvaluatedKey
-    # if so perform another scan with ExclusiveStartKey = LastEvaluatedKey
-    # merge resutls together
 
     ##############################################################################################
+    # Indexing Methods
+    ##############################################################################################
+
+    ############################################################################
     # Desc: return items matching provided filter
     #
     # @param  filters_list; list of filters
     # @param  doc_class; document class
     #
-    # @ret DynamoDB object
-    ##############################################################################################
+    # @ret Document DynamoDB object list
+    ############################################################################
     def evaluate(self, filters_list, doc_class):
         fv = ""
         id_list = list()
