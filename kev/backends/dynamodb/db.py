@@ -5,6 +5,8 @@ import logging
 from kev.backends import DocDB
 
 from pprint import pprint
+from boto3.dynamodb.conditions import Key
+
 
 class DynamoDB(DocDB):
 
@@ -197,31 +199,29 @@ class DynamoDB(DocDB):
 
     # Indexing Methods
 
+    # create scanner grouping
+    # scan
+    #  check result for LastEvaluatedKey
+    # if so perform another scan with ExclusiveStartKey = LastEvaluatedKey
+    # merge resutls together
+
+    ##############################################################################################
+    # Desc: return items matching provided filter
+    #
+    # @param  filters_list; list of filters
+    # @param  doc_class; document class
+    #
+    # @ret DynamoDB object
+    ##############################################################################################
     def evaluate(self, filters_list, doc_class):
-#DynamoDB: DEBUG: starting evaluate: ['dynamodb:dynamodbtestdocumentslug:indexes:name:great mountain']
-#DynamoDB: DEBUG: Sdfsd: <class 'kev.tests.documents.DynamoDBTestDocumentSlug'>
-
-
-        self.log.debug("starting evaluate: " + str(filters_list))
-        self.log.debug("Sdfsd: " + str(doc_class))
-        # TODO what does this do?
-
-
-
+        fv = ""
+        id_list = list()
         if len(filters_list) == 1:
-            filter_value = filters_list[0]
-            resp  = self._indexer.scan()  # TODO filter scan
+            fv = filters_list[0]
+            fe = Key('_id').eq(fv)
+            resp = self._indexer.scan(FilterExpression=fe)
             id_list = resp["Items"]
 
-       #     id_list = self._indexer.tables.filter(Prefix=filter_value)
-
-        # else:
-        #     raise ValueError('There should only be one filter for DynamoDB backends')
-        # for id in id_list:
-
-        #     index_dict = re.match(self.index_pattern,id.key).groupdict()
-        #     yield self.get(doc_class,index_dict['doc_id'])
-    #    id_list = self.get_id_list(filters_list)
+        self.log.debug("{} records found for filter: {}".format(fv,len(id_list)))
         for id in id_list:
-            self.log.debug("dsssssssssss: " + str(id))
             yield doc_class.get(self.parse_id(id))
