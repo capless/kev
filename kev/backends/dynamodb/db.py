@@ -18,69 +18,6 @@ class DynamoDB(DocDB):
                     '[-\W\w\s]+)/(?P<doc_id>[-\w]+):id:' \
                     '(?P<backend_id_b>[-\w]+):(?P<class_name_b>[-\w]+)$'
 
-### client operations
-# batch_get_item()
-# batch_write_item()
-# can_paginate()
-# create_table()
-# delete_item()
-# delete_table()
-# describe_limits()
-# describe_table()
-# describe_time_to_live()
-# generate_presigned_url()
-# get_item()
-# get_paginator()
-# get_waiter()
-# list_tables()
-# list_tags_of_resource()
-# put_item()
-# query()
-# scan()
-# tag_resource()
-# untag_resource()
-# update_item()
-# update_table()
-# update_time_to_live()
-
-### table operations
-## These are the resource's available identifiers:
-# name
-
-## These are the resource's available attributes:
-# attribute_definitions
-# creation_date_time
-# global_secondary_indexes
-# item_count
-# key_schema
-# latest_stream_arn
-# latest_stream_label
-# local_secondary_indexes
-# provisioned_throughput
-# stream_specification
-# table_arn
-# table_name
-# table_size_bytes
-# table_status
-
-## These are the resource's available actions:
-# batch_writer()
-# delete()
-# delete_item()
-# get_available_subresources()
-# get_item()
-# load()
-# put_item()
-# query()
-# reload()
-# scan()
-# update()
-# update_item()
-# These are the resource's available waiters:
-
-# wait_until_exists()
-# wait_until_not_exists()
-
 
     ############################################################################
     # Desc: dynamodb DB constructor
