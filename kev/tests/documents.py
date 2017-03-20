@@ -8,7 +8,9 @@ from kev.exceptions import ValidationException, QueryError
 from kev.query import combine_list, combine_dicts
 from kev.testcase import kev_handler,KevTestCase
 
-
+##################################################################################
+# TestDocument: base model definition
+##################################################################################
 class TestDocument(Document):
     name = CharProperty(
         required=True,
@@ -28,36 +30,57 @@ class TestDocument(Document):
         use_db = 's3redis'
         handler = kev_handler
 
+##################################################################################
+# FloatTestDocument: add FloatProperty to generic model
+##################################################################################
+class FloatTestDocument(TestDocument):
+    gpa = FloatProperty()
+
+##################################################################################
+# BaseTestDocumentSlug: base slug model
+##################################################################################
 class BaseTestDocumentSlug(TestDocument):
     slug = CharProperty(required=True, unique=True)
     email = CharProperty(required=True, unique=True)
     city = CharProperty(required=True, index=True)
 
-class FloatBaseTestDocumentSlug(BaseTestDocumentSlug):
+##################################################################################
+# S3TestDocumentSlug: S3 slug, with regular float
+##################################################################################
+class S3TestDocumentSlug(BaseTestDocumentSlug):
     gpa = FloatProperty()
 
-class DecimalBaseTestDocumentSlug(BaseTestDocumentSlug):
-    # TODO replace with actual decimal class
-    # http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html
-    gpa = FloatProperty(storeString=True)
-
-class S3TestDocumentSlug(FloatBaseTestDocumentSlug):
     class Meta:
         use_db = 's3'
         handler = kev_handler
 
-class S3RedisTestDocumentSlug(FloatBaseTestDocumentSlug):
+##################################################################################
+# S3RedisTestDocumentSlug: S3Redis slug, with regular float
+##################################################################################
+class S3RedisTestDocumentSlug(BaseTestDocumentSlug):
+    gpa = FloatProperty()
+
     class Meta:
         use_db = 's3redis'
         handler = kev_handler
 
-class RedisTestDocumentSlug(FloatBaseTestDocumentSlug):
+##################################################################################
+# RedisTestDocumentSlug: Redis slug, with regular float
+##################################################################################
+class RedisTestDocumentSlug(BaseTestDocumentSlug):
+    gpa = FloatProperty()
 
     class Meta:
         use_db = 'redis'
         handler = kev_handler
 
-class DynamoDBTestDocumentSlug(DecimalBaseTestDocumentSlug):
+##################################################################################
+# DynamoDBTestDocumentSlug: DynamoDB slug, with float converted to string
+##################################################################################
+class DynamoDBTestDocumentSlug(BaseTestDocumentSlug):
+    # TODO replace with actual decimal class
+    # http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html
+    gpa = FloatProperty(storeString=True)
 
     class Meta:
         use_db = 'dynamodb'
@@ -66,7 +89,7 @@ class DynamoDBTestDocumentSlug(DecimalBaseTestDocumentSlug):
 class DocumentTestCase(KevTestCase):
 
     def test_default_values(self):
-        obj = TestDocument(name='Fred')
+        obj = FloatTestDocument(name='Fred')
         self.assertEqual(obj.is_active, True)
         self.assertEqual(obj._doc.get('is_active'), True)
         self.assertEqual(obj.date_created, datetime.date.today())
@@ -90,7 +113,7 @@ class DocumentTestCase(KevTestCase):
         self.assertEqual(obj._index_change_list,['s3redis:s3redistestdocumentslug:indexes:name:brian'])
 
     def test_validate_valid(self):
-        t1 = TestDocument(
+        t1 = FloatTestDocument(
             name='DNSly',
             is_active=False,
             no_subscriptions=2,
@@ -98,44 +121,44 @@ class DocumentTestCase(KevTestCase):
         t1.save()
 
     def test_validate_boolean(self):
-        t2 = TestDocument(name='Google', is_active='Gone', gpa=4.0)
+        t2 = FloatTestDocument(name='Google', is_active='Gone', gpa=4.0)
         with self.assertRaises(ValidationException) as vm:
             t2.save()
         self.assertEqual(str(vm.exception),
                          'is_active: This value should be True or False.')
 
     def test_validate_datetime(self):
-        t2 = TestDocument(name='Google', gpa=4.0, last_updated='today')
+        t2 = FloatTestDocument(name='Google', gpa=4.0, last_updated='today')
         with self.assertRaises(ValidationException) as vm:
             t2.save()
         self.assertEqual(str(vm.exception),
                          'last_updated: This value should be a valid datetime object.')
 
     def test_validate_date(self):
-        t2 = TestDocument(name='Google', gpa=4.0, date_created='today')
+        t2 = FloatTestDocument(name='Google', gpa=4.0, date_created='today')
         with self.assertRaises(ValidationException) as vm:
             t2.save()
         self.assertEqual(str(vm.exception),
                          'date_created: This value should be a valid date object.')
 
     def test_validate_integer(self):
-        t2 = TestDocument(name='Google', gpa=4.0, no_subscriptions='seven')
+        t2 = FloatTestDocument(name='Google', gpa=4.0, no_subscriptions='seven')
         with self.assertRaises(ValidationException) as vm:
             t2.save()
         self.assertEqual(str(vm.exception),
                          'no_subscriptions: This value should be an integer')
 
     def test_validate_float(self):
-        t2 = TestDocument(name='Google', gpa='seven')
+        t2 = FloatTestDocument(name='Google', gpa='seven')
         with self.assertRaises(ValidationException) as vm:
             t2.save()
         self.assertEqual(str(vm.exception),
                          'gpa: This value should be a float.')
 
     def test_validate_unique(self):
-        t1 = TestDocument(name='Google', gpa=4.0)
+        t1 = FloatTestDocument(name='Google', gpa=4.0)
         t1.save()
-        t2 = TestDocument(name='Google', gpa=4.0)
+        t2 = FloatTestDocument(name='Google', gpa=4.0)
         with self.assertRaises(ValidationException) as vm:
             t2.save()
         self.assertEqual(str(vm.exception),
