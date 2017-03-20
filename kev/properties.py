@@ -87,6 +87,9 @@ class BooleanMixin(VariableMixin):
 
 
 class BaseProperty(VariableMixin, object):
+    # FUTURE: storeString hack to get DynamoDB storage working, misrepresents actual allowable types
+    #        Implement decimal type class, decimal not serializable so must be stored as string
+    #        or figure out a way for Decimal to be serializable.
 
     def __init__(
         self,
@@ -96,6 +99,7 @@ class BaseProperty(VariableMixin, object):
         unique=False,
         validators=[],
         verbose_name=None,
+        storeString=False,
         **kwargs
     ):
         self.default_value = default_value
@@ -110,6 +114,7 @@ class BaseProperty(VariableMixin, object):
         self.validators = set(self.validators)
         if verbose_name:
             self.verbose_name = verbose_name
+        self.storeString = storeString
 
     def validate(self, value, key):
         if not value and not isinstance(self.get_default_value(), type(None)):
@@ -156,7 +161,10 @@ class IntegerProperty(IntegerVariableMixin, BaseProperty):
 class FloatProperty(FloatVariableMixin, BaseProperty):
 
     def get_db_value(self, value):
-        return float(value)
+        if self.storeString:
+            return str(value)
+        else:
+            return float(value)
 
     def get_python_value(self, value):
         if not value:

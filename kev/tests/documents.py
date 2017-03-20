@@ -20,7 +20,6 @@ class TestDocument(Document):
     is_active = BooleanProperty(default_value=True)
     no_subscriptions = IntegerProperty(
         default_value=1, min_value=1, max_value=20)
-    gpa = FloatProperty()
 
     def __unicode__(self):
         return self.name
@@ -29,30 +28,36 @@ class TestDocument(Document):
         use_db = 's3redis'
         handler = kev_handler
 
-
 class BaseTestDocumentSlug(TestDocument):
     slug = CharProperty(required=True, unique=True)
     email = CharProperty(required=True, unique=True)
     city = CharProperty(required=True, index=True)
 
-class S3TestDocumentSlug(BaseTestDocumentSlug):
+class FloatBaseTestDocumentSlug(BaseTestDocumentSlug):
+    gpa = FloatProperty()
 
+class DecimalBaseTestDocumentSlug(BaseTestDocumentSlug):
+    # TODO replace with actual decimal class
+    # http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html
+    gpa = FloatProperty(storeString=True)
+
+class S3TestDocumentSlug(FloatBaseTestDocumentSlug):
     class Meta:
         use_db = 's3'
         handler = kev_handler
 
-class S3RedisTestDocumentSlug(BaseTestDocumentSlug):
+class S3RedisTestDocumentSlug(FloatBaseTestDocumentSlug):
     class Meta:
         use_db = 's3redis'
         handler = kev_handler
 
-class RedisTestDocumentSlug(BaseTestDocumentSlug):
+class RedisTestDocumentSlug(FloatBaseTestDocumentSlug):
 
     class Meta:
         use_db = 'redis'
         handler = kev_handler
 
-class DynamoDBTestDocumentSlug(BaseTestDocumentSlug):
+class DynamoDBTestDocumentSlug(DecimalBaseTestDocumentSlug):
 
     class Meta:
         use_db = 'dynamodb'
@@ -143,7 +148,7 @@ class S3RedisQueryTestCase(KevTestCase):
     doc_class = S3RedisTestDocumentSlug
 
     def setUp(self):
-
+        self.doc_class().flush_db()
         self.t1 = self.doc_class(name='Goo and Sons', slug='goo-sons', gpa=3.2,
                                  email='goo@sons.com', city="Durham")
         self.t1.save()
@@ -278,50 +283,115 @@ class S3QueryTestCase(S3RedisQueryTestCase):
     def test_non_unique_wildcard_filter(self):
         pass
 
-# nosetests --stop -i /dynamo/
 class DynamoDbQueryTestCase(KevTestCase):
 
     doc_class = DynamoDBTestDocumentSlug
 
-    def test_dynamodb_save_flush(self):
-        t1 = self.doc_class(name='Great Mountain',
+    # FUTURE: refactor unittests so each backend inherits comprehensive test suite
+
+    def setUp(self):
+        self.doc_class().flush_db()
+        self.t1 = self.doc_class(name='Goo and Sons', slug='goo-sons', gpa=3.2,
+                                 email='goo@sons.com', city="Durham")
+        self.t1.save()
+        self.t2 = self.doc_class(
+            name='Great Mountain',
             slug='great-mountain',
+            gpa=3.2,
             email='great@mountain.com',
             city='Charlotte')
-        t1.save()
-        self.assertEqual(1, len(list(self.doc_class().all())))
+        self.t2.save()
+        self.t3 = self.doc_class(
+            name='Lakewoood YMCA',
+            slug='lakewood-ymca',
+            gpa=3.2,
+            email='lakewood@ymca.com',
+            city='Durham')
+        self.t3.save()
+
+    def test_ddb_non_unique_filter(self):
+        qs = self.doc_class.objects().filter({'city': 'durham'})
+        self.assertEqual(2, qs.count())
+
+    def test_ddb_non_unique_wildcard_filter(self):
+        # NOTE: DDB uses client-side regex for filtering, normal regex syntax applies
+        # FUTURE: develop solution to get this more in-line with the other backends
+        qs = self.doc_class.objects().filter({'city': 'du.ham'})
+        self.assertEqual(2, qs.count())
+
+    def test_ddb_objects_get_single_indexed_prop(self):
+        obj = self.doc_class.objects().get({'name': self.t1.name})
+        self.assertEqual(obj.slug, self.t1.slug)
+
+    def test_ddb_get(self):
+        obj = self.doc_class.get({"slug": self.t1.slug})
+        self.assertEqual(obj._id, self.t1._id)
+
+    def test_ddb_flush_db(self):
+        self.assertEqual(3, len(list(self.doc_class.all())))
         self.doc_class().flush_db()
-        self.assertEqual(0, len(list(self.doc_class().all())))
+        self.assertEqual(0, len(list(self.doc_class.all())))
 
-    def test_dynamodb_all(self):
-        self.assertEqual(0, len(list(self.doc_class().all())))
-        t1 = self.doc_class(name='Rocky Mountain',
-            slug='rocky-mountain',
-            email='rocky@mountain.com',
-            city='Philly')
-        t1.save()
-        self.assertEqual(1, len(list(self.doc_class().all())))
+    def test_ddb_delete(self):
+        qs = self.doc_class.objects().filter({'city': 'durham'})
+        self.assertEqual(2, qs.count())
+        qs[0].delete()
+        qs = self.doc_class.objects().filter({'city': 'durham'})
+        self.assertEqual(1, qs.count())
 
-    def test_dynamodb_get_delete(self):
-        t1 = self.doc_class(name='Snowy Mountain',
-            slug='snowy-mountain',
-            email='snowy@mountain.com',
-            city='Hilly')
-        t1.save()
+    def test_ddb_wildcard_queryset_iter(self):
+        qs = self.doc_class.objects().filter({'city': 'du*ham'})
+        for i in qs:
+            self.assertIsNotNone(i.id)
 
-        # use get to validate item succesfully saved
-        pk = {'slug': t1.slug}
-        t2 = self.doc_class().get(pk)
-        self.assertEqual(t1.email,t2.email)
+    def test_ddb_queryset_iter(self):
+        qs = self.doc_class.objects().filter({'city': 'durham'})
+        for i in qs:
+            self.assertIsNotNone(i.id)
 
-        # delete, perform get again
-        t2.delete()
-        # TODO keyError?
-        with self.assertRaises(KeyError) as vm:
-            self.doc_class().get(pk)
-        self.doc_class().flush_db()
+    def test_ddb_wildcard_queryset_chaining(self):
+        qs = self.doc_class.objects().filter({'name': 'Goo and Sons'}).filter({'city': 'Du*ham'})
+        with self.assertRaises(ValueError):
+            qs.count()
 
-    # def evaluate(self, filters_list, doc_class):
+    def test_ddb_queryset_chaining(self):
+        qs = self.doc_class.objects().filter({'name': 'Goo and Sons'}).filter({'city': 'Durham'})
+        with self.assertRaises(ValueError):
+            qs.count()
+
+    def test_ddb_objects_get_no_result(self):
+        with self.assertRaises(QueryError) as vm:
+            self.doc_class.objects().get({'username': 'affsdfadsf'})
+        self.assertEqual(str(vm.exception),'This query did not return a result.')
+
+    def test_ddb_objects_wildcard_get_no_result(self):
+        with self.assertRaises(QueryError) as vm:
+            self.doc_class.objects().get({'username': 'affsd*adsf'})
+        self.assertEqual(str(vm.exception),'This query did not return a result.')
+
+    def test_ddb_all(self):
+        qs = self.doc_class.all()
+        self.assertEqual(3, len(list(qs)))
+
+    def test_ddb_objects_get_multiple_results(self):
+        with self.assertRaises(QueryError) as vm:
+            self.doc_class.objects().get({'city': 'durham'})
+        self.assertEqual(str(vm.exception),
+                         'This query should return exactly one result. Your query returned 2')
+
+    def test_ddb_combine_list(self):
+        a = [1, 2, 3]
+        b = ['a', 'b', 'c']
+        c = combine_list(a, b)
+        self.assertEqual([1, 2, 3, 'a', 'b', 'c'], c)
+
+    def test_ddb_combine_dicts(self):
+        a = {'username': 'boywonder', 'doc_type': 'goo'}
+        b = {'email': 'boywonder@superteam.com', 'doc_type': 'foo'}
+        c = combine_dicts(a, b)
+        self.assertEqual({'username': 'boywonder',
+                          'email': 'boywonder@superteam.com',
+                          'doc_type': ['goo', 'foo']}, c)
 
 
 if __name__ == '__main__':
