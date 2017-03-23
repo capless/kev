@@ -1,7 +1,6 @@
 import boto3
 import json
 import re
-import logging
 from kev.backends import DocDB
 
 from pprint import pprint
@@ -32,7 +31,7 @@ class DynamoDB(DocDB):
     def __init__(self,**kwargs):
         """Dynamodb DB constructor
 
-        Setup the logger and boto3 dynamodb resource/session.
+        Boto3 dynamodb resource/session.
 
         FUTURE: create helper methods to create/delete tables(useful for testing)
 
@@ -52,10 +51,6 @@ class DynamoDB(DocDB):
         self.table    = kwargs['table']
         self._indexer = self._db.Table(self.table)
 
-        # setup logger
-        self.logName  = str(self.__class__.__name__)
-        self.log      = logging.getLogger(self.logName)
-
 
     ##############################################################################################
     # CRUD Operation Methods
@@ -72,7 +67,6 @@ class DynamoDB(DocDB):
 
         """
         doc_obj, doc = self._save(doc_obj)
-        self.log.debug("saving doc: {}".format(doc))
         self._indexer.put_item(Item=doc)
         return doc_obj
 
@@ -91,7 +85,6 @@ class DynamoDB(DocDB):
             object; document object of retrieved item
         """
 
-        self.log.debug("getting item: {}".format(doc_id))
         doc = self._indexer.get_item(Key=doc_id)
         return doc_class(**(doc["Item"]))
 
@@ -112,7 +105,6 @@ class DynamoDB(DocDB):
         # scan table to get item list
         resp  = self._indexer.scan()
         items = resp["Items"]
-        self.log.debug("flush_db: found {} items to delete".format(len(items)))
 
         # delete items using batch delete
         if len(items) == 0:
@@ -120,7 +112,6 @@ class DynamoDB(DocDB):
         with self._indexer.batch_writer() as batch:
             for item in items:
                 pk = {k: item[k] for k in self._get_pk()}
-                self.log.debug("\tflush_db: deleting: {}".format(pk))
                 batch.delete_item(Key=pk)
 
 
@@ -135,7 +126,6 @@ class DynamoDB(DocDB):
         pk = {k: getattr(doc_obj,k) for k in self._get_pk()}
 
         # delete item
-        self.log.debug("delete: deleting item: {}".format(pk))
         self._indexer.delete_item(Key=pk)
 
 
@@ -152,7 +142,6 @@ class DynamoDB(DocDB):
         """
         resp = self._indexer.scan()
         item_list = resp["Items"]
-        self.log.debug("scanning for all items, '{}' found".format(len(item_list)))
 
         for item in item_list:
             yield doc_class(**item)
@@ -208,6 +197,7 @@ class DynamoDB(DocDB):
                 exp_attr_map[attr_name] = attr_key       # eliminate duplicates
                 counter = counter+1
 
+
             # invert map for scan
             exp_attr_map = {v: k for k, v in exp_attr_map.iteritems()}
             proj_exp_str = ",".join(proj_exp_list)
@@ -228,7 +218,6 @@ class DynamoDB(DocDB):
                 if is_passed:
                     id_list.append(item)
 
-        self.log.debug("evaluate: {} records found for filter(s) '{}'".format(len(id_list),"|".join(filters_list)))
         for id in id_list:
             pk_list = self._get_pk()
             lookup_id = {k: id[k] for k in pk_list}
