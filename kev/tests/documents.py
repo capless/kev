@@ -80,7 +80,7 @@ class RedisTestDocumentSlug(BaseTestDocumentSlug):
 class DynamoDBTestDocumentSlug(BaseTestDocumentSlug):
     # TODO replace with actual decimal class
     # http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html
-    gpa = FloatProperty(storeString=True)
+    gpa = FloatProperty(store_string=True)
 
     class Meta:
         use_db = 'dynamodb'
