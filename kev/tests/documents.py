@@ -363,7 +363,7 @@ class DynamoDbQueryTestCase(KevTestCase):
         self.assertEqual(1, qs.count())
 
     def test_ddb_wildcard_queryset_iter(self):
-        qs = self.doc_class.objects().filter({'city': 'du*ham'})
+        qs = self.doc_class.objects().filter({'city': 'du.ham'})
         for i in qs:
             self.assertIsNotNone(i.id)
 
@@ -373,14 +373,12 @@ class DynamoDbQueryTestCase(KevTestCase):
             self.assertIsNotNone(i.id)
 
     def test_ddb_wildcard_queryset_chaining(self):
-        qs = self.doc_class.objects().filter({'name': 'Goo and Sons'}).filter({'city': 'Du*ham'})
-        with self.assertRaises(ValueError):
-            qs.count()
+        qs = self.doc_class.objects().filter({'name': 'Goo and Sons'}).filter({'city': 'Du.ham'})
+        self.assertEqual(1, qs.count())
 
     def test_ddb_queryset_chaining(self):
         qs = self.doc_class.objects().filter({'name': 'Goo and Sons'}).filter({'city': 'Durham'})
-        with self.assertRaises(ValueError):
-            qs.count()
+        self.assertEqual(1, qs.count())
 
     def test_ddb_objects_get_no_result(self):
         with self.assertRaises(QueryError) as vm:
@@ -389,7 +387,7 @@ class DynamoDbQueryTestCase(KevTestCase):
 
     def test_ddb_objects_wildcard_get_no_result(self):
         with self.assertRaises(QueryError) as vm:
-            self.doc_class.objects().get({'username': 'affsd*adsf'})
+            self.doc_class.objects().get({'username': 'affsd.adsf'})
         self.assertEqual(str(vm.exception),'This query did not return a result.')
 
     def test_ddb_all(self):

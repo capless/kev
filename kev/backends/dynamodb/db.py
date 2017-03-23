@@ -180,18 +180,21 @@ class DynamoDB(DocDB):
             object list: list of items that pass provided filters
 
         """
-        fv = ""
         id_list = list()
 
-        if len(filters_list) == 1:
-            # generate lookup attribute list
-            fv = filters_list[0]
-            grps = re.search(r'indexes:([-\W\w\s]+):([-\W\w\s]+)$', fv)
+        if len(filters_list) > 0:
+            # generate lookup attribute list, grabbing all fields required for later filtering
+            # attr_list: return only the data required for filtering
+            # filt_map: used to provide client-side filtering
             attr_list = self._get_pk()
+            filt_map = dict();
+            for filts in filters_list:
+                grps = re.search(r'indexes:([-\W\w\s]+):([-\W\w\s]+)$', filts)
 
-            filt_key = grps.group(1)
-            filt_val = grps.group(2)
-            attr_list.append(filt_key)
+                filt_key = grps.group(1)
+                filt_val = grps.group(2)
+                filt_map[filt_key] = filt_val
+                attr_list.append(filt_key)
 
             # generate expression map to avoid keywords
             proj_exp_list = list()
@@ -215,12 +218,17 @@ class DynamoDB(DocDB):
             # filter results
             id_list = list()
             for item in items:
-                if (filt_key in item) and re.match(filt_val, item[filt_key], re.IGNORECASE):
-                    id_list.append(item)
-        else:
-            raise ValueError('There should only be one filter for DynamoDB backends')
+                is_passed = True
+                for fk in filt_map:
+                    # apply each filter to every item
+                    fv = filt_map[fk]
+                    if not ((fk in item) and re.match(fv, item[fk], re.IGNORECASE)):
+                        is_passed = False
 
-        self.log.debug("evaluate: {} records found for filter '{}'".format(len(id_list),fv))
+                if is_passed:
+                    id_list.append(item)
+
+        self.log.debug("evaluate: {} records found for filter(s) '{}'".format(len(id_list),"|".join(filters_list)))
         for id in id_list:
             pk_list = self._get_pk()
             lookup_id = {k: id[k] for k in pk_list}
