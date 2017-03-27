@@ -67,13 +67,13 @@ class DocumentTestCase(KevTestCase):
     def test_default_values(self):
         obj = TestDocument(name='Fred')
         self.assertEqual(obj.is_active, True)
-        self.assertEqual(obj._doc.get('is_active'), True)
+        self.assertEqual(obj._data.get('is_active'), True)
         self.assertEqual(obj.date_created, datetime.date.today())
-        self.assertEqual(obj._doc.get('date_created'), datetime.date.today())
+        self.assertEqual(obj._data.get('date_created'), datetime.date.today())
         self.assertEqual(type(obj.last_updated), datetime.datetime)
-        self.assertEqual(type(obj._doc.get('last_updated')), datetime.datetime)
+        self.assertEqual(type(obj._data.get('last_updated')), datetime.datetime)
         self.assertEqual(obj.no_subscriptions, 1)
-        self.assertEqual(obj._doc.get('no_subscriptions'), 1)
+        self.assertEqual(obj._data.get('no_subscriptions'), 1)
         self.assertEqual(obj.gpa,None)
 
 

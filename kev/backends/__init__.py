@@ -51,7 +51,7 @@ class DocDB(object):
             .format(key=key, value=value))
 
     def _save(self, doc_obj):
-        doc = doc_obj._doc.copy()
+        doc = doc_obj._data.copy()
         for key, prop in list(doc_obj._base_properties.items()):
             prop.validate(doc.get(key), key)
             raw_value = prop.get_python_value(doc.get(key))

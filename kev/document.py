@@ -1,12 +1,10 @@
 from six import with_metaclass
 from valley.declarative import DeclaredVars as DV, \
     DeclarativeVariablesMetaclass as DVM
+from valley.schema import BaseSchema
 
 from .properties import BaseProperty
 from .query import QueryManager
-
-
-BUILTIN_DOC_ATTRS = ('_id', '_doc_type')
 
 
 class DeclaredVars(DV):
@@ -18,16 +16,17 @@ class DeclarativeVariablesMetaclass(DVM):
     declared_vars_class = DeclaredVars
 
 
-class BaseDocument(object):
+class BaseDocument(BaseSchema):
     """
     Base class for all Kev Documents classes.
     """
+    BUILTIN_DOC_ATTRS = ('_id', '_doc_type')
 
     def __init__(self, **kwargs):
-        self._doc = self.process_doc_kwargs(kwargs)
+        self._data = self.process_schema_kwargs(kwargs)
         self._db = self.get_db()
-        if '_id' in self._doc:
-            self.set_pk(self._doc['_id'])
+        if '_id' in self._data:
+            self.set_pk(self._data['_id'])
         self._index_change_list = []
 
     def __repr__(self):
@@ -35,43 +34,18 @@ class BaseDocument(object):
             class_name=self.__class__.__name__, uni=self.__unicode__(),
             id=self.pk)
 
-    def __unicode__(self):
-        return '({0} Object)'.format(self.__class__.__name__)
-
-    def __getattr__(self, name):
-        if name in list(self._base_properties.keys()):
-            prop = self._base_properties[name]
-            return prop.get_python_value(self._doc.get(name))
-
     def __setattr__(self, name, value):
         if name in list(self._base_properties.keys()):
             if name in self.get_indexed_props() and value \
-                    != self._doc.get(name) and self._doc.get(name) is not None:
+                    != self._data.get(name) and self._data.get(name) is not None:
                 self._index_change_list.append(
-                    self.get_index_name(name, self._doc[name]))
-            self._doc[name] = value
+                    self.get_index_name(name, self._data[name]))
+            self._data[name] = value
         else:
             super(BaseDocument, self).__setattr__(name, value)
 
-    def process_doc_kwargs(self, kwargs):
-        doc = {}
-        for key, prop in list(self._base_properties.items()):
-            try:
-                # if prop.__class__.__name__ == 'BooleanProperty':
-                #     value = prop.get_python_value(kwargs.get(key))
-                # else:
-                value = prop.get_python_value(kwargs.get(key) or prop.get_default_value())
-            except ValueError:
-                value = kwargs.get(key) or prop.get_default_value()
-
-            doc[key] = value
-        for i in BUILTIN_DOC_ATTRS:
-            if kwargs.get(i):
-                doc[i] = kwargs[i]
-        return doc
-
     def set_pk(self, pk):
-        self._doc['_id'] = pk
+        self._data['_id'] = pk
         self._id = pk
         self.id = self._db.parse_id(pk)
         self.pk = self.id
@@ -94,7 +68,7 @@ class BaseDocument(object):
         index_list = []
         for i in self.get_indexed_props():
             try:
-                index_list.append(self.get_index_name(i, self._doc[i]))
+                index_list.append(self.get_index_name(i, self._data[i]))
             except KeyError:
                 pass
         return index_list
@@ -111,10 +85,6 @@ class BaseDocument(object):
     def get_doc_id(cls,id):
         return cls.get_db().doc_id_string.format(
             doc_id=id,backend_id=cls.get_db().backend_id,class_name=cls.get_class_name())
-
-    @classmethod
-    def get_class_name(cls):
-        return cls.__name__.lower()
 
     @classmethod
     def get_index_name(cls, prop, index_value):

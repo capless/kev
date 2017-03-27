@@ -36,7 +36,7 @@ class DynamoDB(DocDB):
         return doc_obj
 
     def delete(self, doc_obj):
-        self._indexer.delete_item(Key={'_id': doc_obj._doc['_id']})
+        self._indexer.delete_item(Key={'_id': doc_obj._data['_id']})
 
     def all(self, cls):
         obj_list = self._indexer.scan()['Items']
