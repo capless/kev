@@ -68,6 +68,7 @@ class DocDB(object):
         return (doc_obj, doc)
 
     def get_id_list(self, filters_list):
+        # NOTE: this will only work for redis backend
         l = self.parse_filters(filters_list)
         if len(l) == 1:
             return self._indexer.smembers(l[0])
