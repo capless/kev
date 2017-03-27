@@ -4,9 +4,10 @@ import datetime
 from kev import (Document,CharProperty,DateTimeProperty,
                  DateProperty,BooleanProperty,IntegerProperty,
                  FloatProperty)
-from kev.exceptions import ValidationException, QueryError
+from kev.exceptions import QueryError
 from kev.query import combine_list, combine_dicts
 from kev.testcase import kev_handler,KevTestCase
+from valley.exceptions import ValidationException
 
 ##################################################################################
 # TestDocument: base model definition
@@ -86,18 +87,25 @@ class DynamoDBTestDocumentSlug(BaseTestDocumentSlug):
         use_db = 'dynamodb'
         handler = kev_handler
 
+class DynamoTestDocumentSlug(BaseTestDocumentSlug):
+
+    class Meta:
+        use_db = 'dynamodb'
+        handler = kev_handler
+
+
 class DocumentTestCase(KevTestCase):
 
     def test_default_values(self):
         obj = FloatTestDocument(name='Fred')
         self.assertEqual(obj.is_active, True)
-        self.assertEqual(obj._doc.get('is_active'), True)
+        self.assertEqual(obj._data.get('is_active'), True)
         self.assertEqual(obj.date_created, datetime.date.today())
-        self.assertEqual(obj._doc.get('date_created'), datetime.date.today())
+        self.assertEqual(obj._data.get('date_created'), datetime.date.today())
         self.assertEqual(type(obj.last_updated), datetime.datetime)
-        self.assertEqual(type(obj._doc.get('last_updated')), datetime.datetime)
+        self.assertEqual(type(obj._data.get('last_updated')), datetime.datetime)
         self.assertEqual(obj.no_subscriptions, 1)
-        self.assertEqual(obj._doc.get('no_subscriptions'), 1)
+        self.assertEqual(obj._data.get('no_subscriptions'), 1)
         self.assertEqual(obj.gpa,None)
 
 
@@ -306,6 +314,7 @@ class S3QueryTestCase(S3RedisQueryTestCase):
     def test_non_unique_wildcard_filter(self):
         pass
 
+
 class DynamoDbQueryTestCase(KevTestCase):
 
     doc_class = DynamoDBTestDocumentSlug
@@ -354,6 +363,7 @@ class DynamoDbQueryTestCase(KevTestCase):
         self.assertEqual(3, len(list(self.doc_class.all())))
         self.doc_class().flush_db()
         self.assertEqual(0, len(list(self.doc_class.all())))
+
 
     def test_ddb_delete(self):
         qs = self.doc_class.objects().filter({'city': 'durham'})
@@ -413,7 +423,7 @@ class DynamoDbQueryTestCase(KevTestCase):
         self.assertEqual({'username': 'boywonder',
                           'email': 'boywonder@superteam.com',
                           'doc_type': ['goo', 'foo']}, c)
-
+        
 
 if __name__ == '__main__':
     unittest.main()

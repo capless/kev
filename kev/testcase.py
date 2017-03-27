@@ -32,6 +32,13 @@ kev_handler = KevHandler({
         'connection': {
             'table': env('DYNAMODB_TABLE_TEST')
         }
+    },
+    'dynamodb': {
+        'backend': 'kev.backends.dynamodb.db.DynamoDB',
+        'connection': {
+            'table': env('DYNAMO_TABLE_TEST'),
+            'endpoint_url': env('DYNAMO_ENDPOINT_URL_TEST')
+        }
     }
 })
 
