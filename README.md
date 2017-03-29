@@ -3,7 +3,7 @@ K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and 
 
 [![Build Status](https://travis-ci.org/capless/kev.svg?branch=master)](https://travis-ci.org/capless/kev)
 
-##Python Versions
+## Python Versions
 
 Kev should work on Python 2.7, 3.3, 3.4, and 3.5. It will not work on 3.2.
 ##Install
@@ -11,9 +11,9 @@ Kev should work on Python 2.7, 3.3, 3.4, and 3.5. It will not work on 3.2.
 pip install kev
 ```
 
-##Example Usage
+## Example Usage
 
-###Setup the Connection
+### Setup the Connection
 **Example:** loading.py
 ```python
 from kev.loading import KevHandler
@@ -45,7 +45,7 @@ kev_handler = KevHandler({
     }
 })
 ```
-###Setup the Models
+### Setup the Models
 **Example:** models.py
 ```python
 from kev import (Document,CharProperty,DateTimeProperty,
@@ -73,8 +73,8 @@ class TestDocument(Document):
 
 ```
 
-###Use the model
-####How to Save a Document
+### Use the model
+#### How to Save a Document
 ```python
 >>>from .models import TestDocument
 
@@ -97,9 +97,9 @@ ec640abfd6
 >>>kevin._id
 'ec640abfd6:id:s3redis:testdocument'
 ```
-####Query Documents
+#### Query Documents
 
-#####First Save Some More Docs
+##### First Save Some More Docs
 ```python
 
 >>>george = TestDocument(name='George',is_active=True,no_subscriptions=3,gpa=3.25,state='VA')
@@ -110,14 +110,14 @@ ec640abfd6
 
 >>>sally.save()
 ```
-#####Show all Documents
+##### Show all Documents
 ```python
 >>>TestDocument.all()
 
 [<TestDocument: Kev:ec640abfd6>,<TestDocument: George:aff7bcfb56>,<TestDocument: Sally:c38a77cfe4>]
 
 ```
-#####Get One Document
+##### Get One Document
 ```python
 >>>TestDocument.get('ec640abfd6')
 <TestDocument: Kev:ec640abfd6>
@@ -126,7 +126,7 @@ ec640abfd6
 <TestDocument: Kev:ec640abfd6>
 
 ```
-#####Filter Documents
+##### Filter Documents
 ```python
 >>>TestDocument.objects().filter({'state':'VA'})
 
@@ -138,7 +138,7 @@ ec640abfd6
 >>>TestDocument.objects().filter({'no_subscriptions':3,'state':'NC'})
 [<TestDocument: Kev:ec640abfd6>]
 ```
-#####Chain Filters
+##### Chain Filters
 The chain filters feature is only available for Redis and S3/Redis backends.
 ```python
 >>>TestDocument.objects().filter({'no_subscriptions':3}).filter({'state':'NC'})
@@ -146,7 +146,7 @@ The chain filters feature is only available for Redis and S3/Redis backends.
 
 ```
 
-#####Wildcard Filters
+##### Wildcard Filters
 Wildcard filters currently only work with the Redis and S3/Redis backend. Use prefixes with the S3 backend.
 ```python
 >>>TestDocument.objects().filter({'state':'N*'})
@@ -154,9 +154,14 @@ Wildcard filters currently only work with the Redis and S3/Redis backend. Use pr
 
 ```
 
-#####Prefix Filters
+##### Prefix Filters
 Prefix filters currently only work with the S3 backend. Use wildcard filters with the Redis or S3/Redis backends.
 ```python
 >>>TestDocument.objects().filter({'state':'N'})
 [<TestDocument: Kev:ec640abfd6>]
 ```
+
+### Author
+
+**Twitter:**:[@brianjinwright](https://twitter.com/brianjinwright)
+**Github:** [bjinwright](https://github.com/bjinwright)
