@@ -1,7 +1,7 @@
 # kev
-K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases. Currently supported backends are Redis, S3, DynamoDB and a S3/Redis hybrid backend.
+K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases based on [**Valley**](https://www.github.com/capless/valley). Currently supported backends are Redis, S3, DynamoDB and a S3/Redis hybrid backend.
 
-[![Build Status](https://travis-ci.org/kevproject/kev.svg?branch=master)](https://travis-ci.org/kevproject/kev)
+[![Build Status](https://travis-ci.org/capless/kev.svg?branch=master)](https://travis-ci.org/capless/kev)
 
 ## Python Versions
 
