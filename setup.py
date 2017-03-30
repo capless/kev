@@ -31,7 +31,7 @@ setup(
     author_email='opensource@ipoots.com',
     maintainer='Brian Jinwright',
     packages=find_packages(),
-
+    url='https://github.com/capless/kev',
     license='Apache',
     install_requires=[str(ir.req) for ir in install_reqs],
     include_package_data=True,
