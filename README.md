@@ -247,3 +247,8 @@ dynamodb.create_table(TableName=table_name, KeySchema=[{'AttributeName': '_id', 
 export DYNAMO_TABLE_TEST='localtable'
 export DYNAMO_ENDPOINT_URL_TEST='http://127.0.0.1:8000'
 ```
+
+### Author
+
+**Twitter:**:[@brianjinwright](https://twitter.com/brianjinwright)
+**Github:** [bjinwright](https://github.com/bjinwright)
