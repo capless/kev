@@ -33,7 +33,7 @@ class S3RedisDB(RedisDB):
         pipe = self.add_indexes(doc_obj, doc, pipe)
         pipe = self.remove_indexes(doc_obj, pipe)
         pipe.execute()
-        # doc_obj._doc = doc_obj.process_doc_kwargs(doc)
+
         return doc_obj
 
     def get(self,doc_class,doc_id):

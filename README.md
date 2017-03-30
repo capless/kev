@@ -1,12 +1,12 @@
 # kev
-K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases. Currently supported backends are Redis, S3, and a S3/Redis hybrid backend.
+K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases based on [**Valley**](https://www.github.com/capless/valley). Currently supported backends are Redis, S3, DynamoDB and a S3/Redis hybrid backend.
 
 [![Build Status](https://travis-ci.org/capless/kev.svg?branch=master)](https://travis-ci.org/capless/kev)
 
 ## Python Versions
 
 Kev should work on Python 2.7, 3.3, 3.4, and 3.5. It will not work on 3.2.
-##Install
+## Install
 ```
 pip install kev
 ```
@@ -41,6 +41,12 @@ kev_handler = KevHandler({
         'connection': {
             'host': 'your-redis-host.com',
             'port': 6379,
+        }
+    },
+    'dynamodb': {
+        'backend': 'kev.backends.dynamodb.db.DynamoDB',
+        'connection': {
+            'table': 'your-dynamodb-table',
         }
     }
 })
@@ -159,6 +165,87 @@ Prefix filters currently only work with the S3 backend. Use wildcard filters wit
 ```python
 >>>TestDocument.objects().filter({'state':'N'})
 [<TestDocument: Kev:ec640abfd6>]
+```
+### DynamoDB setup
+#### Create a table
+* **Table name** should be between 3 and 255 characters long. (A-Z,a-z,0-9,_,-,.)
+* **Primary key** (partition key) should be equal to `_id`
+
+#### Filter Documents
+If you want to make `filter()` queries, you should create an index for every attribute that you want to filter by.
+* **Primary key** should be equal to attribute name.
+* **Index name** should be equal to attribute name postfixed by *"-index"*. (It will be filled by AWS automatically).
+For example, for attribute *"city"*: *Primary key* = *"city"* and index name = *"city-index"*.
+* **Projected attributes**: *All*.
+
+### Use DynamoDB locally
+#### Run DynamoDB
+* with persistent storage `docker run -d -p 8000:8000 -v /tmp/data:/data/ dwmkerr/dynamodb -dbPath /data/`
+
+#### Configuration
+**Example:** loading.py
+```python
+from kev.loading import KevHandler
+
+
+kev_handler = KevHandler({
+    'dynamodb': {
+        'backend': 'kev.backends.dynamodb.db.DynamoDB',
+        'connection': {
+            'table': 'your-dynamodb-table',
+            'endpoint_url' 'http://127.0.0.1:8000'
+        }
+    }
+})
+```
+
+#### Testing
+##### Run DynamoDB
+* in memory (best performance) `docker run -d -p 8000:8000 dwmkerr/dynamodb -inMemory`
+
+##### Create a table for testing.
+
+```python
+import boto3
+
+
+table_wcu = 2000
+table_rcu = 2000
+index_wcu = 3000
+index_rcu = 2000
+table_name = 'localtable'
+
+dynamodb = boto3.resource('dynamodb', endpoint_url="http://127.0.0.1:8000")
+dynamodb.create_table(TableName=table_name, KeySchema=[{'AttributeName': '_id', 'KeyType': 'HASH'}],
+                      ProvisionedThroughput={'ReadCapacityUnits': table_rcu,
+                                             'WriteCapacityUnits': table_wcu},
+                      AttributeDefinitions=[{'AttributeName': '_id', 'AttributeType': 'S'},
+                                            {u'AttributeName': u'city', u'AttributeType': u'S'},
+                                            {u'AttributeName': u'email', u'AttributeType': u'S'},
+                                            {u'AttributeName': u'name', u'AttributeType': u'S'},
+                                            {u'AttributeName': u'slug', u'AttributeType': u'S'}],
+                      GlobalSecondaryIndexes=[
+                          {'IndexName': 'city-index', 'Projection': {'ProjectionType': 'ALL'},
+                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
+                                                     'ReadCapacityUnits': index_rcu},
+                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'city'}]},
+                          {'IndexName': 'name-index', 'Projection': {'ProjectionType': 'ALL'},
+                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
+                                                     'ReadCapacityUnits': index_rcu},
+                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'name'}]},
+                          {'IndexName': 'slug-index', 'Projection': {'ProjectionType': 'ALL'},
+                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
+                                                     'ReadCapacityUnits': index_rcu},
+                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'slug'}]},
+                          {'IndexName': 'email-index', 'Projection': {'ProjectionType': 'ALL'},
+                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
+                                                     'ReadCapacityUnits': index_rcu},
+                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'email'}]}])
+```
+##### Setup environment variables.
+```bash
+export DYNAMO_TABLE_TEST='localtable'
+export DYNAMO_ENDPOINT_URL_TEST='http://127.0.0.1:8000'
 ```
 
 ### Author

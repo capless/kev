@@ -26,12 +26,12 @@ class RedisDB(DocDB):
         pipe = self.add_indexes(doc_obj, doc, pipe)
         pipe = self.remove_indexes(doc_obj, pipe)
         pipe.execute()
-        # doc_obj._doc = doc_obj.process_doc_kwargs(doc)
+
         return doc_obj
 
     def delete(self, doc_obj):
         pipe = self._db.pipeline()
-        pipe.delete(doc_obj._doc['_id'])
+        pipe.delete(doc_obj._data['_id'])
         pipe = self.remove_from_model_set(doc_obj, pipe)
         doc_obj._index_change_list = doc_obj.get_indexes()
         pipe = self.remove_indexes(doc_obj, pipe)

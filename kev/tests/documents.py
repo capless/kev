@@ -4,9 +4,10 @@ import datetime
 from kev import (Document,CharProperty,DateTimeProperty,
                  DateProperty,BooleanProperty,IntegerProperty,
                  FloatProperty)
-from kev.exceptions import ValidationException, QueryError
+from kev.exceptions import QueryError
 from kev.query import combine_list, combine_dicts
 from kev.testcase import kev_handler,KevTestCase
+from valley.exceptions import ValidationException
 
 
 class TestDocument(Document):
@@ -54,18 +55,25 @@ class RedisTestDocumentSlug(BaseTestDocumentSlug):
         handler = kev_handler
 
 
+class DynamoTestDocumentSlug(BaseTestDocumentSlug):
+
+    class Meta:
+        use_db = 'dynamodb'
+        handler = kev_handler
+
+
 class DocumentTestCase(KevTestCase):
 
     def test_default_values(self):
         obj = TestDocument(name='Fred')
         self.assertEqual(obj.is_active, True)
-        self.assertEqual(obj._doc.get('is_active'), True)
+        self.assertEqual(obj._data.get('is_active'), True)
         self.assertEqual(obj.date_created, datetime.date.today())
-        self.assertEqual(obj._doc.get('date_created'), datetime.date.today())
+        self.assertEqual(obj._data.get('date_created'), datetime.date.today())
         self.assertEqual(type(obj.last_updated), datetime.datetime)
-        self.assertEqual(type(obj._doc.get('last_updated')), datetime.datetime)
+        self.assertEqual(type(obj._data.get('last_updated')), datetime.datetime)
         self.assertEqual(obj.no_subscriptions, 1)
-        self.assertEqual(obj._doc.get('no_subscriptions'), 1)
+        self.assertEqual(obj._data.get('no_subscriptions'), 1)
         self.assertEqual(obj.gpa,None)
 
 
@@ -273,6 +281,67 @@ class S3QueryTestCase(S3RedisQueryTestCase):
 
     def test_non_unique_wildcard_filter(self):
         pass
+
+
+class DynamoTestCase(KevTestCase):
+
+    doc_class = DynamoTestDocumentSlug
+
+    def setUp(self):
+        self.t1 = self.doc_class(name='Goo and Sons', slug='goo-sons', gpa=3.2,
+                                 email='goo@sons.com', city="Durham")
+        self.t1.save()
+        self.t2 = self.doc_class(name='Great Mountain', slug='great-mountain', gpa=3.2,
+                                 email='great@mountain.com', city='Charlotte')
+        self.t2.save()
+        self.t3 = self.doc_class(name='Lakewoood YMCA', slug='lakewood-ymca', gpa=3.2,
+                                 email='lakewood@ymca.com', city='Durham')
+        self.t3.save()
+
+    def test_get(self):
+        obj = self.doc_class.get(self.t1.id)
+        self.assertEqual(obj._id, self.t1._id)
+
+    def test_flush_db(self):
+        self.assertEqual(3, len(list(self.doc_class.all())))
+        self.doc_class().flush_db()
+        self.assertEqual(0, len(list(self.doc_class.all())))
+
+    def test_delete(self):
+        qs = self.doc_class.objects().filter({'city': 'Durham'})
+        self.assertEqual(2, qs.count())
+        qs[0].delete()
+        qs = self.doc_class.objects().filter({'city': 'Durham'})
+        self.assertEqual(1, qs.count())
+
+    def test_all(self):
+        qs = self.doc_class.all()
+        self.assertEqual(3, len(list(qs)))
+
+    def test_non_unique_filter(self):
+        qs = self.doc_class.objects().filter({'city': 'Durham'})
+        self.assertEqual(2, qs.count())
+
+    def test_objects_get_single_indexed_prop(self):
+        obj = self.doc_class.objects().get({'name': self.t1.name})
+        self.assertEqual(obj.slug, self.t1.slug)
+
+    def test_queryset_chaining(self):
+        qs = self.doc_class.objects().filter(
+            {'name': 'Goo and Sons'}).filter({'city': 'Durham'})
+        self.assertEqual(1, qs.count())
+        self.assertEqual(self.t1.name, qs[0].name)
+
+    def test_more_than_hundred_objects(self):
+        for i in range(110):
+            doc = self.doc_class(name='Object_{0}'.format(i), slug='object-{0}'.format(i), gpa=4.6,
+                                 email='object_{0}@ymca.com'.format(i), city='Durham')
+            doc.save()
+        qs = self.doc_class.all()
+        self.assertEqual(113, len(list(qs)))
+        qs = self.doc_class.objects().filter({'city': 'Durham'})
+        self.assertEqual(112, qs.count())
+
 
 if __name__ == '__main__':
     unittest.main()
