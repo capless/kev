@@ -2,7 +2,7 @@ import unittest
 import datetime
 from kev.properties import (BaseProperty, CharProperty, DateProperty,
                             DateTimeProperty, FloatProperty, IntegerProperty,
-                            BooleanProperty)
+                            BooleanProperty, SlugProperty, EmailProperty)
 from valley.exceptions import ValidationException
 
 
@@ -137,6 +137,22 @@ class PropertiesTestCase(unittest.TestCase):
         # Make sure that the default value works
         prop.validate(None, 'no_packages')
         self.assertEqual(prop.get_default_value(), datetime.date.today())
+
+    def test_slug_property_validate(self):
+        prop = SlugProperty(required=True)
+        prop.validate('some-slug','slug')
+        with self.assertRaises(ValidationException) as vm:
+            prop.validate('sdfsd sfsdfsf','slug')
+        self.assertEqual(str(vm.exception),
+            'slug: This value should be a slug. ex. pooter-is-awesome')
+
+    def test_email_property_validate(self):
+        prop = EmailProperty(required=True)
+        prop.validate('some@email.com','email')
+        with self.assertRaises(ValidationException) as vm:
+            prop.validate('some text','email')
+        self.assertEqual(str(vm.exception),
+            'email: This value should be a valid email address')
 
     def test_date_property_validate_default_value(self):
         prop = DateProperty(required=True, default_value=datetime.date.today())
