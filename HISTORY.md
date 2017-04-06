@@ -1,5 +1,10 @@
 # History
 
+### 0.8.1
+
+- Fixed get_index_name for backends other than DynamoDB
+- Added more context to docs on DynamoDB index names
+
 ### 0.8.0
 
 - Added DynamoDB backend
