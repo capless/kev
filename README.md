@@ -175,7 +175,8 @@ Prefix filters currently only work with the S3 backend. Use wildcard filters wit
 If you want to make `filter()` queries, you should create an index for every attribute that you want to filter by.
 * **Primary key** should be equal to attribute name.
 * **Index name** should be equal to attribute name postfixed by *"-index"*. (It will be filled by AWS automatically).
-For example, for attribute *"city"*: *Primary key* = *"city"* and index name = *"city-index"*.
+For example, for attribute *"city"*: *Primary key* = *"city"* and index name = *"city-index"*. 
+- **IMPORTANT: In other words if your indexed attribute is named city, then your index name should be city-index.**
 * **Projected attributes**: *All*.
 
 ### Use DynamoDB locally
