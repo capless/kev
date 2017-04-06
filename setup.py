@@ -3,7 +3,7 @@ from pip.req import parse_requirements
 
 install_reqs = parse_requirements('requirements.txt', session=False)
 
-version = '0.8.0'
+version = '0.8.1'
 
 LONG_DESCRIPTION = """
 =======================
