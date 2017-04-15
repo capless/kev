@@ -2,6 +2,7 @@ import six
 from six import with_metaclass
 from valley.declarative import DeclaredVars as DV, \
     DeclarativeVariablesMetaclass as DVM
+from valley.exceptions import ValidationException
 from valley.schema import BaseSchema
 
 from .properties import BaseProperty
@@ -26,6 +27,10 @@ class BaseDocument(BaseSchema):
     def __init__(self, **kwargs):
         self._data = self.process_schema_kwargs(kwargs)
         self._db = self.get_db()
+
+        self._create_error_dict = kwargs.get('create_error_dict') or self._create_error_dict
+        if self._create_error_dict:
+            self._errors = {}
         if '_id' in self._data:
             self.set_pk(self._data['_id'])
         self._index_change_list = []
@@ -64,6 +69,18 @@ class BaseDocument(BaseSchema):
             if prop.unique:
                 unique_list.append(key)
         return unique_list
+
+    def check_unique(self):
+        
+        for key in self.get_unique_props():
+            try:
+                self._db.check_unique(self,key,self.cleaned_data.get(key))
+            except ValidationException as e:
+                if self._create_error_dict:
+                    self._errors[key] = e.error_msg
+                else:
+                    raise e
+
 
     def get_indexes(self):
         index_list = []
