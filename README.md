@@ -14,6 +14,9 @@ Kev should work on Python 2.7, 3.3, 3.4, and 3.5. It will not work on 3.2.
 pip install kev
 ```
 
+##Example Project Using KEV
+
+- [flask-capless-blog](https://github.com/capless/flask-capless-blog)
 ## Example Usage
 
 ### Setup the Connection
