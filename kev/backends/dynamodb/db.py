@@ -12,6 +12,8 @@ class DynamoDB(DocDB):
 
     db_class = boto3
     backend_id = 'dynamodb'
+    default_index_name = '{0}-index'
+    index_field_name = 'index_name'
 
     def __init__(self, **kwargs):
         if 'aws_secret_access_key' in kwargs and 'aws_access_key_id' in kwargs:
@@ -68,8 +70,9 @@ class DynamoDB(DocDB):
         for idx, filter in enumerate(filters):
             index, value = filter.split(':')[3:5]
             if idx == 0:
-                index_name = doc_class()._base_properties[index].kwargs.get('index_name', None) or \
-                             '{0}-index'.format(index)
+                prop = doc_class()._base_properties[index]
+                index_name = prop.kwargs.get(self.index_field_name, None) or \
+                             self.default_index_name.format(index)
                 query_params['KeyConditionExpression'] = Key(index).eq(value)
             else:
                 filter_expression_list.append(Attr(index).eq(value))
