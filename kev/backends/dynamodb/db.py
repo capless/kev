@@ -55,20 +55,21 @@ class DynamoDB(DocDB):
         for i in obj_list:
             self._indexer.delete_item(Key={'_id': i['_id']})
 
-    # # Indexing Methods
-    def get_doc_list(self, filters_list):
-        query_params = self.parse_filters(filters_list)
+    # Indexing Methods
+    def get_doc_list(self, filters_list, doc_class):
+        query_params = self.parse_filters(filters_list, doc_class)
         response = self._indexer.query(**query_params)
         return response['Items']
 
-    def parse_filters(self, filters):
+    def parse_filters(self, filters, doc_class):
         index_name = None
         filter_expression_list = []
         query_params = {}
         for idx, filter in enumerate(filters):
             index, value = filter.split(':')[3:5]
             if idx == 0:
-                index_name = '{0}-index'.format(index)
+                index_name = doc_class()._base_properties[index].kwargs.get('index_name', None) or \
+                             '{0}-index'.format(index)
                 query_params['KeyConditionExpression'] = Key(index).eq(value)
             else:
                 filter_expression_list.append(Attr(index).eq(value))
@@ -81,6 +82,6 @@ class DynamoDB(DocDB):
         return query_params
 
     def evaluate(self, filters_list, doc_class):
-         docs_list = self.get_doc_list(filters_list)
+         docs_list = self.get_doc_list(filters_list, doc_class)
          for doc in docs_list:
              yield doc_class(**doc)
