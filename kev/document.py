@@ -36,7 +36,7 @@ class BaseDocument(BaseSchema):
         self._index_change_list = []
 
     def __repr__(self):
-        return '<{class_name}: {uni}:{id} >'.format(
+        return '<{class_name}: {uni}:{id}>'.format(
             class_name=self.__class__.__name__, uni=self.__unicode__(),
             id=self.pk)
 
