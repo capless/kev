@@ -200,7 +200,7 @@ kev_handler = KevHandler({
         'backend': 'kev.backends.dynamodb.db.DynamoDB',
         'connection': {
             'table': 'your-dynamodb-table',
-            'endpoint_url' 'http://127.0.0.1:8000'
+            'endpoint_url': 'http://127.0.0.1:8000'
         }
     }
 })
