@@ -68,14 +68,14 @@ class DynamoDB(DocDB):
         filter_expression_list = []
         query_params = {}
         for idx, filter in enumerate(filters):
-            index, value = filter.split(':')[3:5]
+            prop_name, prop_value = filter.split(':')[3:5]
             if idx == 0:
-                prop = doc_class()._base_properties[index]
+                prop = doc_class()._base_properties[prop_name]
                 index_name = prop.kwargs.get(self.index_field_name, None) or \
-                             self.default_index_name.format(index)
-                query_params['KeyConditionExpression'] = Key(index).eq(value)
+                             self.default_index_name.format(prop_name)
+                query_params['KeyConditionExpression'] = Key(prop_name).eq(prop_value)
             else:
-                filter_expression_list.append(Attr(index).eq(value))
+                filter_expression_list.append(Attr(prop_name).eq(prop_value))
         if len(filter_expression_list) > 1:
             query_params['FilterExpression'] = And(*filter_expression_list)
         elif len(filter_expression_list) == 1:
