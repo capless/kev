@@ -104,7 +104,7 @@ class BaseDocument(BaseSchema):
 
     @classmethod
     def get_index_name(cls, prop, index_value):
-        if cls.get_db().backend_id != 'dynamodb':
+        if cls.get_db().backend_id != 'dynamodb' and cls.get_db().backend_id != 'cloudantdb':
             if isinstance(index_value,str):
                 index_value = index_value.lower()
         return '{0}:{1}:indexes:{2}:{3}'.format(
