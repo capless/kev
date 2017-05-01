@@ -1,6 +1,7 @@
 import unittest
 import datetime
 
+from botocore.exceptions import ClientError
 from kev import (Document,CharProperty,DateTimeProperty,
                  DateProperty,BooleanProperty,IntegerProperty,
                  FloatProperty)
@@ -56,6 +57,16 @@ class RedisTestDocumentSlug(BaseTestDocumentSlug):
 
 
 class DynamoTestDocumentSlug(BaseTestDocumentSlug):
+
+    class Meta:
+        use_db = 'dynamodb'
+        handler = kev_handler
+
+
+class DynamoTestCustomIndex(TestDocument):
+    slug = CharProperty(required=True, unique=True)
+    email = CharProperty(required=True, unique=True)
+    city = CharProperty(required=True, index=True, index_name='custom-index')
 
     class Meta:
         use_db = 'dynamodb'
@@ -341,6 +352,22 @@ class DynamoTestCase(KevTestCase):
         self.assertEqual(113, len(list(qs)))
         qs = self.doc_class.objects().filter({'city': 'Durham'})
         self.assertEqual(112, qs.count())
+
+
+class DynamoIndexTestCase(KevTestCase):
+    doc_class = DynamoTestCustomIndex
+
+    def setUp(self):
+        self.t1 = self.doc_class(name='Goo and Sons', slug='goo-sons', gpa=3.2,
+                                 email='goo@sons.com', city="Durham")
+        self.t1.save()
+
+    def test_index_name_fail(self):
+        qs = self.doc_class.objects().filter({'city': 'Durham'})
+        with self.assertRaises(ClientError) as context:
+            list(qs)
+        self.assertTrue('table does not have the specified index' in \
+                        context.exception.response['Error']['Message'])
 
 
 if __name__ == '__main__':
