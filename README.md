@@ -182,8 +182,13 @@ Prefix filters currently only work with the S3 backend. Use wildcard filters wit
 If you want to make `filter()` queries, you should create an index for every attribute that you want to filter by.
 * **Primary key** should be equal to attribute name.
 * **Index name** should be equal to attribute name postfixed by *"-index"*. (It will be filled by AWS automatically).
-For example, for attribute *"city"*: *Primary key* = *"city"* and index name = *"city-index"*. 
-- **IMPORTANT: In other words if your indexed attribute is named city, then your index name should be city-index.**
+For example, for attribute *"city"*: *Primary key* = *"city"* and index name = *"city-index"*.
+* **Index name** can be directly specified by `index_name` argument:
+```python
+    name = CharProperty(required=True,unique=True,min_length=5,max_length=20,index_name='name_index')
+```
+- **IMPORTANT: In other words, if your indexed attribute is named city, then your index name should be city-index,
+if you didn't specify `index_name` argument.**
 * **Projected attributes**: *All*.
 
 ### Use DynamoDB locally
@@ -201,7 +206,7 @@ kev_handler = KevHandler({
         'backend': 'kev.backends.dynamodb.db.DynamoDB',
         'connection': {
             'table': 'your-dynamodb-table',
-            'endpoint_url' 'http://127.0.0.1:8000'
+            'endpoint_url': 'http://127.0.0.1:8000'
         }
     }
 })
