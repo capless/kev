@@ -53,8 +53,7 @@ class CloudantDB(DocDB):
         return response()['docs']
 
     def parse_filters(self, filters):
-        query_params = {}
-        query_params['selector'] = {}
+        query_params = {'selector': {}}
         for filter in filters:
             prop_name, prop_value = filter.split(':')[3:5]
             query_params['selector'].update({prop_name: prop_value})

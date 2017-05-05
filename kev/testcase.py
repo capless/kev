@@ -39,6 +39,7 @@ kev_handler = KevHandler({
             'username': env('CLOUDANT_USERNAME_TEST'),
             'password': env('CLOUDANT_PASSWORD_TEST'),
             'url': env('CLOUDANT_URL_TEST'),
+            'account': env('CLOUDANT_ACCOUNT_TEST'),
             'table': env('CLOUDANT_TABLE_TEST'),
         }
     }
