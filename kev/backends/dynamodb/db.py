@@ -27,7 +27,7 @@ class DynamoDB(DocDB):
     def save(self, doc_obj):
         doc_obj, doc = self._save(doc_obj)
         # DynamoDB requires Decimal type instead of Float
-        for key, value in list(doc.items()):
+        for key, value in doc.items():
             if type(value) == float:
                 doc[key] = decimal.Decimal(str(value))
         try:

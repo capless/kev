@@ -1,4 +1,3 @@
-import six
 import json
 import hashlib
 import uuid
@@ -34,7 +33,7 @@ class DocDB(object):
         doc = doc.copy()
         doc['_date'] = str(datetime.datetime.now())
         doc['_uuid'] = str(uuid.uuid4())
-        hash_pk = hashlib.md5(six.b(json.dumps(doc))).hexdigest()[:10]
+        hash_pk = hashlib.md5(bytes(json.dumps(doc),'utf-8')).hexdigest()[:10]
         doc_obj.set_pk(self.doc_id_string.format(doc_id=hash_pk,
             backend_id=self.backend_id, class_name=doc_obj.get_class_name()))
         return doc_obj

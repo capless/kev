@@ -1,5 +1,3 @@
-import six
-from six import with_metaclass
 from valley.declarative import DeclaredVars as DV, \
     DeclarativeVariablesMetaclass as DVM
 from valley.exceptions import ValidationException
@@ -107,7 +105,7 @@ class BaseDocument(BaseSchema):
     @classmethod
     def get_index_name(cls, prop, index_value):
         if cls.get_db().backend_id != 'dynamodb':
-            if isinstance(index_value,six.string_types):
+            if isinstance(index_value,str):
                 index_value = index_value.lower()
         return '{0}:{1}:indexes:{2}:{3}'.format(
             cls.get_db().backend_id.lower(),
@@ -140,7 +138,7 @@ class BaseDocument(BaseSchema):
         handler = None
 
 
-class Document(with_metaclass(DeclarativeVariablesMetaclass, BaseDocument)):
+class Document(BaseDocument,metaclass=DeclarativeVariablesMetaclass):
 
     @classmethod
     def get_db(cls):
