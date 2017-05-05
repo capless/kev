@@ -3,7 +3,8 @@ Redis document property classes. Much of the date and time property
 code was borrowed or inspired by Benoit Chesneau's CouchDBKit library.
 """
 
-from valley.mixins import CharVariableMixin, IntegerVariableMixin, FloatVariableMixin, SlugVariableMixin, \
+from valley.mixins import CharVariableMixin, IntegerVariableMixin, \
+    FloatVariableMixin, SlugVariableMixin, \
     EmailVariableMixin, BooleanMixin, DateMixin, DateTimeMixin
 from valley.properties import BaseProperty as VBaseProperty
 
