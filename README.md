@@ -60,9 +60,9 @@ kev_handler = KevHandler({
         'backend': 'kev.backends.cloudant.db.CloudantDB',
         'connection': {
             'username': 'admin',
-            'password': 'pass'),
+            'password': 'pass',
             'account_name': 'your-account-name',
-            'table': 'your-table-name'',
+            'table': 'your-table-name',
         }
     }
 })
@@ -273,7 +273,7 @@ export DYNAMO_ENDPOINT_URL_TEST='http://127.0.0.1:8000'
 ### Cloudant setup
 #### Cloudant Developer Edition [Docker Hub](https://hub.docker.com/r/ibmcom/cloudant-developer/)
 
-* Download the image from Docker Hub
+* Download the image from Docker Hub:
 
  `docker pull ibmcom/cloudant-developer`
 * Run the following:
@@ -286,9 +286,7 @@ export DYNAMO_ENDPOINT_URL_TEST='http://127.0.0.1:8000'
 
 * You can start and stop the container by following commands:
 
-`docker start cloudant-developer`
-
-`docker stop cloudant-developer`
+`docker start cloudant-developer` and `docker stop cloudant-developer`
 
 You can access the cloudant dashboard [http://localhost:8080/dashboard.html](http://localhost:8080/dashboard.html)
 
@@ -306,7 +304,7 @@ kev_handler = KevHandler({
             'username': 'admin',
             'password': 'pass',
             'table': 'your-cloudant-table',
-            'url' 'http://127.0.0.1:8080'
+            'url': 'http://127.0.0.1:8080'
         }
     }
 })
