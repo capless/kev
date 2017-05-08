@@ -1,3 +1,7 @@
+import json
+import boto3
+from urllib.parse import urlparse
+
 from valley.declarative import DeclaredVars as DV, \
     DeclarativeVariablesMetaclass as DVM
 from valley.exceptions import ValidationException
@@ -25,7 +29,7 @@ class BaseDocument(BaseSchema):
     def __init__(self, **kwargs):
         self._data = self.process_schema_kwargs(kwargs)
         self._db = self.get_db()
-
+        self._s3 = boto3.resource('s3')
         self._create_error_dict = kwargs.get('create_error_dict') or self._create_error_dict
         if self._create_error_dict:
             self._errors = {}
@@ -132,6 +136,46 @@ class BaseDocument(BaseSchema):
     def save(self):
         self._db.save(self)
 
+    def get_restore_json(self,restore_path,path_type,bucket=None):
+        if path_type == 's3':
+            print(bucket,restore_path)
+            return json.loads(self._s3.Object(
+                bucket, restore_path).get().get('Body').read().decode())
+        else:
+            with open(restore_path) as f:
+                return json.load(f)
+
+    def get_path_type(self,path):
+        if path.startswith('s3://'):
+            result = urlparse(path)
+
+            return (result.path[1:],'s3',result.netloc)
+        else:
+            return (path,'local',None)
+
+    def restore(self,restore_path):
+        file_path, path_type, bucket = self.get_path_type(restore_path)
+        docs = self.get_restore_json(file_path,path_type,bucket)
+        for doc in docs:
+            self.__class__(**doc).save()
+
+    def remove_id(self,doc):
+        doc._data.pop('_id')
+        return doc
+
+    def backup(self,export_path):
+        file_path, path_type, bucket = self.get_path_type(export_path)
+        json_docs = [self._db.prep_doc(
+            self.remove_id(doc)) for doc in self.all()]
+
+        if path_type == 'local':
+            with open(export_path,'w+') as f:
+                json.dump(json_docs,f)
+        else:
+            #Use tmp directory if we are uploading to S3 just in case we
+            #are using Lambda
+            self._s3.Object(bucket, file_path).put(
+                Body=json.dumps(json_docs))
 
     class Meta:
         use_db = 'default'

@@ -49,7 +49,14 @@ class DocDB(object):
             'There is already a {key} with the value of {value}'
             .format(key=key, value=value))
 
-    def _save(self, doc_obj):
+    def prep_doc(self, doc_obj):
+        """
+        This method Validates, gets the Python value, checks unique indexes, 
+        gets the db value, and then returns the prepared doc dict object. 
+        Useful for save and backup functions.
+        @param doc_obj: 
+        @return: 
+        """
         doc = doc_obj._data.copy()
         for key, prop in list(doc_obj._base_properties.items()):
             prop.validate(doc.get(key), key)
@@ -60,6 +67,10 @@ class DocDB(object):
             doc[key] = value
 
         doc['_doc_type'] = get_doc_type(doc_obj.__class__)
+        return doc
+
+    def _save(self, doc_obj):
+        doc = self.prep_doc(doc_obj)
 
         if '_id' not in doc:
             self.create_pk(doc_obj,doc)
