@@ -67,7 +67,7 @@ from kev import (Document,CharProperty,DateTimeProperty,
 from .loading import kev_handler
 
 class TestDocument(Document):
-    name = CharProperty(required=True,unique=True,min_length=5,max_length=20)
+    name = CharProperty(required=True,unique=True,min_length=3,max_length=20)
     last_updated = DateTimeProperty(auto_now=True)
     date_created = DateProperty(auto_now_add=True)
     is_active = BooleanProperty(default_value=True,index=True)
@@ -259,6 +259,41 @@ dynamodb.create_table(TableName=table_name, KeySchema=[{'AttributeName': '_id', 
 ```bash
 export DYNAMO_TABLE_TEST='localtable'
 export DYNAMO_ENDPOINT_URL_TEST='http://127.0.0.1:8000'
+```
+
+### Backup and Restore
+
+Easily backup or restore your model locally or from S3. The backup method creates a JSON file backup. 
+
+#### Backup 
+
+##### Local Backup
+
+```python
+TestDocument().backup('test-backup.json')
+```
+
+##### S3 Backup
+
+```python
+
+TestDocument().backup('s3://your-bucket/kev/test-backup.json')
+```
+
+#### Restore
+
+##### Local Restore
+
+```python
+
+TestDocument().restore('test-backup.json')
+```
+
+#### S3 Restore
+
+```python
+
+TestDocument().restore('s3://your-bucket/kev/test-backup.json')
 ```
 
 ### Author
