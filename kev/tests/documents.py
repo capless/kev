@@ -1,8 +1,12 @@
+import json
+import os
 import unittest
 import datetime
 import time
 
 from botocore.exceptions import ClientError
+from envs import env
+
 from kev import (Document,CharProperty,DateTimeProperty,
                  DateProperty,BooleanProperty,IntegerProperty,
                  FloatProperty)
@@ -264,6 +268,42 @@ class S3RedisQueryTestCase(KevTestCase):
                           'email': 'boywonder@superteam.com',
                           'doc_type': ['goo', 'foo']}, c)
 
+    def test_local_backup(self):
+
+        self.doc_class().backup('test-backup.json')
+        dc = self.doc_class()
+        self.assertEqual(3,
+            len(dc.get_restore_json(*dc.get_path_type('test-backup.json'))))
+        os.remove('test-backup.json')
+
+    def test_local_restore(self):
+
+        self.doc_class().backup('test-backup.json')
+        self.doc_class().flush_db()
+        self.assertEqual(len(list(self.doc_class.all())),0)
+        self.doc_class().restore('test-backup.json')
+        self.assertEqual(len(list(self.doc_class.all())), 3)
+        os.remove('test-backup.json')
+
+    def test_s3_backup(self):
+        self.doc_class().backup(
+            's3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        dc = self.doc_class()
+        self.assertEqual(3,
+            len(dc.get_restore_json(
+                *dc.get_path_type('s3://{}/kev/test-backup.json'.format(
+                    env('S3_BUCKET_TEST'))))))
+
+    def test_s3_restore(self):
+
+        self.doc_class().backup(
+            's3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        for doc in self.doc_class.all():
+            doc.delete()
+        self.assertEqual(len(list(self.doc_class.all())),0)
+        self.doc_class().restore('s3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        self.assertEqual(len(list(self.doc_class.all())), 3)
+
 
 class RedisQueryTestCase(S3RedisQueryTestCase):
 
@@ -353,6 +393,41 @@ class DynamoTestCase(KevTestCase):
         self.assertEqual(113, len(list(qs)))
         qs = self.doc_class.objects().filter({'city': 'Durham'})
         self.assertEqual(112, qs.count())
+
+    def test_local_backup(self):
+
+        self.doc_class().backup('test-backup.json')
+        dc = self.doc_class()
+        self.assertEqual(3,
+            len(dc.get_restore_json(*dc.get_path_type('test-backup.json'))))
+        os.remove('test-backup.json')
+
+    def test_local_restore(self):
+
+        self.doc_class().backup('test-backup.json')
+        self.doc_class().flush_db()
+        self.assertEqual(len(list(self.doc_class.all())),0)
+        self.doc_class().restore('test-backup.json')
+        self.assertEqual(len(list(self.doc_class.all())), 3)
+        os.remove('test-backup.json')
+
+    def test_s3_backup(self):
+        self.doc_class().backup(
+            's3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        dc = self.doc_class()
+        self.assertEqual(3,
+            len(dc.get_restore_json(
+                *dc.get_path_type('s3://{}/kev/test-backup.json'.format(
+                    env('S3_BUCKET_TEST'))))))
+
+    def test_s3_restore(self):
+
+        self.doc_class().backup(
+            's3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        self.doc_class().flush_db()
+        self.assertEqual(len(list(self.doc_class.all())),0)
+        self.doc_class().restore('s3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        self.assertEqual(len(list(self.doc_class.all())), 3)
 
 
 class DynamoIndexTestCase(KevTestCase):
