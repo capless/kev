@@ -1,5 +1,11 @@
 # History
 
+### 0.9.1
+
+- Removed Python 2 support
+- Added backup and restore feature
+- Upgraded to valley 1.3.0
+
 ### 0.9.0
 
 - Fixed S3 backend filters
