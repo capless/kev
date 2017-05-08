@@ -261,6 +261,41 @@ export DYNAMO_TABLE_TEST='localtable'
 export DYNAMO_ENDPOINT_URL_TEST='http://127.0.0.1:8000'
 ```
 
+### Backup and Restore
+
+Easily backup or restore your model locally or from S3. The backup method creates a JSON file backup. 
+
+#### Backup 
+
+##### Local Backup
+
+```python
+TestDocument().backup('test-backup.json')
+```
+
+##### S3 Backup
+
+```python
+
+TestDocument().backup('s3://your-bucket/kev/test-backup.json')
+```
+
+#### Restore
+
+##### Local Restore
+
+```python
+
+TestDocument().restore('test-backup.json')
+```
+
+#### S3 Restore
+
+```python
+
+TestDocument().restore('s3://your-bucket/kev/test-backup.json')
+```
+
 ### Author
 
 **Twitter:**:[@brianjinwright](https://twitter.com/brianjinwright)
