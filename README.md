@@ -67,7 +67,7 @@ from kev import (Document,CharProperty,DateTimeProperty,
 from .loading import kev_handler
 
 class TestDocument(Document):
-    name = CharProperty(required=True,unique=True,min_length=5,max_length=20)
+    name = CharProperty(required=True,unique=True,min_length=3,max_length=20)
     last_updated = DateTimeProperty(auto_now=True)
     date_created = DateProperty(auto_now_add=True)
     is_active = BooleanProperty(default_value=True,index=True)
