@@ -3,7 +3,7 @@ from pip.req import parse_requirements
 
 install_reqs = parse_requirements('requirements.txt', session=False)
 
-version = '0.9.0'
+version = '0.9.1'
 
 LONG_DESCRIPTION = """
 =======================
@@ -29,7 +29,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Environment :: Web Environment",
     ],
-    keywords='redis, s3',
+    keywords='redis, s3, dynamodb',
     author='Brian Jinwright',
     author_email='opensource@ipoots.com',
     maintainer='Brian Jinwright',

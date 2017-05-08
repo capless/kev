@@ -12,6 +12,8 @@ class DynamoDB(DocDB):
 
     db_class = boto3
     backend_id = 'dynamodb'
+    default_index_name = '{0}-index'
+    index_field_name = 'index_name'
 
     def __init__(self, **kwargs):
         if 'aws_secret_access_key' in kwargs and 'aws_access_key_id' in kwargs:
@@ -25,7 +27,7 @@ class DynamoDB(DocDB):
     def save(self, doc_obj):
         doc_obj, doc = self._save(doc_obj)
         # DynamoDB requires Decimal type instead of Float
-        for key, value in list(doc.items()):
+        for key, value in doc.items():
             if type(value) == float:
                 doc[key] = decimal.Decimal(str(value))
         try:
@@ -55,23 +57,25 @@ class DynamoDB(DocDB):
         for i in obj_list:
             self._indexer.delete_item(Key={'_id': i['_id']})
 
-    # # Indexing Methods
-    def get_doc_list(self, filters_list):
-        query_params = self.parse_filters(filters_list)
+    # Indexing Methods
+    def get_doc_list(self, filters_list, doc_class):
+        query_params = self.parse_filters(filters_list, doc_class)
         response = self._indexer.query(**query_params)
         return response['Items']
 
-    def parse_filters(self, filters):
+    def parse_filters(self, filters, doc_class):
         index_name = None
         filter_expression_list = []
         query_params = {}
         for idx, filter in enumerate(filters):
-            index, value = filter.split(':')[3:5]
+            prop_name, prop_value = filter.split(':')[3:5]
             if idx == 0:
-                index_name = '{0}-index'.format(index)
-                query_params['KeyConditionExpression'] = Key(index).eq(value)
+                prop = doc_class()._base_properties[prop_name]
+                index_name = prop.kwargs.get(self.index_field_name, None) or \
+                             self.default_index_name.format(prop_name)
+                query_params['KeyConditionExpression'] = Key(prop_name).eq(prop_value)
             else:
-                filter_expression_list.append(Attr(index).eq(value))
+                filter_expression_list.append(Attr(prop_name).eq(prop_value))
         if len(filter_expression_list) > 1:
             query_params['FilterExpression'] = And(*filter_expression_list)
         elif len(filter_expression_list) == 1:
@@ -81,6 +85,6 @@ class DynamoDB(DocDB):
         return query_params
 
     def evaluate(self, filters_list, doc_class):
-         docs_list = self.get_doc_list(filters_list)
+         docs_list = self.get_doc_list(filters_list, doc_class)
          for doc in docs_list:
              yield doc_class(**doc)

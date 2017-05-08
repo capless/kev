@@ -1,7 +1,6 @@
 import boto3
 import json
 import redis
-import six
 
 from kev.backends.redis.db import RedisDB
 

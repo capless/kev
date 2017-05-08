@@ -47,7 +47,7 @@ class RedisDB(DocDB):
 
         raw_docs = pipe.execute()
         for doc in raw_docs:
-            yield cls(**{k.decode(): v.decode() for k, v in doc.items()})
+            yield cls(**{k.decode('utf-8'): v.decode('utf-8') for k, v in doc.items()})
 
     def get(self, doc_obj, doc_id):
 

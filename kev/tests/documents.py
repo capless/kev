@@ -1,5 +1,11 @@
+import json
+import os
 import unittest
 import datetime
+import time
+
+from botocore.exceptions import ClientError
+from envs import env
 
 from kev import (Document,CharProperty,DateTimeProperty,
                  DateProperty,BooleanProperty,IntegerProperty,
@@ -56,6 +62,16 @@ class RedisTestDocumentSlug(BaseTestDocumentSlug):
 
 
 class DynamoTestDocumentSlug(BaseTestDocumentSlug):
+
+    class Meta:
+        use_db = 'dynamodb'
+        handler = kev_handler
+
+
+class DynamoTestCustomIndex(TestDocument):
+    slug = CharProperty(required=True, unique=True)
+    email = CharProperty(required=True, unique=True)
+    city = CharProperty(required=True, index=True, index_name='custom-index')
 
     class Meta:
         use_db = 'dynamodb'
@@ -252,6 +268,42 @@ class S3RedisQueryTestCase(KevTestCase):
                           'email': 'boywonder@superteam.com',
                           'doc_type': ['goo', 'foo']}, c)
 
+    def test_local_backup(self):
+
+        self.doc_class().backup('test-backup.json')
+        dc = self.doc_class()
+        self.assertEqual(3,
+            len(dc.get_restore_json(*dc.get_path_type('test-backup.json'))))
+        os.remove('test-backup.json')
+
+    def test_local_restore(self):
+
+        self.doc_class().backup('test-backup.json')
+        self.doc_class().flush_db()
+        self.assertEqual(len(list(self.doc_class.all())),0)
+        self.doc_class().restore('test-backup.json')
+        self.assertEqual(len(list(self.doc_class.all())), 3)
+        os.remove('test-backup.json')
+
+    def test_s3_backup(self):
+        self.doc_class().backup(
+            's3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        dc = self.doc_class()
+        self.assertEqual(3,
+            len(dc.get_restore_json(
+                *dc.get_path_type('s3://{}/kev/test-backup.json'.format(
+                    env('S3_BUCKET_TEST'))))))
+
+    def test_s3_restore(self):
+
+        self.doc_class().backup(
+            's3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        for doc in self.doc_class.all():
+            doc.delete()
+        self.assertEqual(len(list(self.doc_class.all())),0)
+        self.doc_class().restore('s3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        self.assertEqual(len(list(self.doc_class.all())), 3)
+
 
 class RedisQueryTestCase(S3RedisQueryTestCase):
 
@@ -341,6 +393,95 @@ class DynamoTestCase(KevTestCase):
         self.assertEqual(113, len(list(qs)))
         qs = self.doc_class.objects().filter({'city': 'Durham'})
         self.assertEqual(112, qs.count())
+
+    def test_local_backup(self):
+
+        self.doc_class().backup('test-backup.json')
+        dc = self.doc_class()
+        self.assertEqual(3,
+            len(dc.get_restore_json(*dc.get_path_type('test-backup.json'))))
+        os.remove('test-backup.json')
+
+    def test_local_restore(self):
+
+        self.doc_class().backup('test-backup.json')
+        self.doc_class().flush_db()
+        self.assertEqual(len(list(self.doc_class.all())),0)
+        self.doc_class().restore('test-backup.json')
+        self.assertEqual(len(list(self.doc_class.all())), 3)
+        os.remove('test-backup.json')
+
+    def test_s3_backup(self):
+        self.doc_class().backup(
+            's3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        dc = self.doc_class()
+        self.assertEqual(3,
+            len(dc.get_restore_json(
+                *dc.get_path_type('s3://{}/kev/test-backup.json'.format(
+                    env('S3_BUCKET_TEST'))))))
+
+    def test_s3_restore(self):
+
+        self.doc_class().backup(
+            's3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        self.doc_class().flush_db()
+        self.assertEqual(len(list(self.doc_class.all())),0)
+        self.doc_class().restore('s3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
+        self.assertEqual(len(list(self.doc_class.all())), 3)
+
+
+class DynamoIndexTestCase(KevTestCase):
+    doc_class = DynamoTestCustomIndex
+
+    def setUp(self):
+        self.doc_class().flush_db()
+        self.db = self.doc_class.get_db()._indexer
+        self.t1 = self.doc_class(name='Goo and Sons', slug='goo-sons', gpa=3.2,
+                                 email='goo@sons.com', city="Durham")
+        self.t1.save()
+
+    def test_index_name_fail(self):
+        qs = self.doc_class.objects().filter({'city': 'Durham'})
+        with self.assertRaises(ClientError) as context:
+            list(qs)
+        self.assertTrue('table does not have the specified index' in \
+                        context.exception.response['Error']['Message'])
+
+    @unittest.skip("no reliable way to check if an index is 'ACTIVE'")
+    def test_index_name_success(self):
+        self.check_index('city-index', 'city')
+        self.rename_index('city', 'city-index', 'custom-index')
+        self.check_index('custom-index', 'city')
+        qs = self.doc_class.objects().filter({'city': 'Durham'})
+        self.assertEqual(1, qs.count())
+        self.rename_index('city', 'custom-index', 'city-index')
+
+    def rename_index(self, attr_name, old_index_name, new_index_name):
+        index_schema = self.check_index(old_index_name, attr_name)
+        #index_schema = {'ProvisionedThroughput': {'ReadCapacityUnits':1000, 'WriteCapacityUnits': 1000}}
+        self.db.update(GlobalSecondaryIndexUpdates=[{'Delete': {'IndexName': old_index_name}}])
+        self.db.wait_until_exists()
+        time.sleep(3)
+        self.db.update(AttributeDefinitions=[{u'AttributeName': attr_name, u'AttributeType': u'S'}],
+            GlobalSecondaryIndexUpdates=[
+            {'Create': {'IndexName': new_index_name,
+                        'Projection': {'ProjectionType': 'ALL'},
+                        'ProvisionedThroughput': index_schema['ProvisionedThroughput'],
+                        'KeySchema': [{'KeyType': 'HASH', 'AttributeName': attr_name}]}}])
+        time.sleep(3)
+
+    def check_index(self, index_name, attr_name):
+        index_schema = self.db.global_secondary_indexes
+        detected = False
+        index_info = {}
+        for index in index_schema:
+            if index['IndexName'] == index_name:
+                index_info = index
+                detected = True
+        self.assertTrue(detected)
+        #self.assertEqual(index_info['IndexStatus'], 'ACTIVE')
+        self.assertEqual(index_info['KeySchema'][0]['AttributeName'], attr_name)
+        return index_info
 
 
 if __name__ == '__main__':
