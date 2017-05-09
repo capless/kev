@@ -311,6 +311,19 @@ class S3RedisQueryTestCase(KevTestCase):
         self.doc_class().restore('s3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
         self.assertEqual(len(list(self.doc_class.all())), 3)
 
+    def test_limit_and_skip(self):
+        self.assertEqual(3, len(list(self.doc_class.all(limit=4))))
+        self.assertEqual(3, len(list(self.doc_class.all(limit=3))))
+        self.assertEqual(2, len(list(self.doc_class.all(limit=2))))
+        self.assertEqual(1, len(list(self.doc_class.all(limit=1))))
+        self.assertEqual(0, len(list(self.doc_class.all(limit=0))))
+        self.assertEqual(2, len(list(self.doc_class.all(skip=1, limit=3))))
+        self.assertEqual(0, len(list(self.doc_class.all(skip=3, limit=3))))
+        with self.assertRaises(AttributeError):
+            list(self.doc_class.all(limit=-1))
+        with self.assertRaises(AttributeError):
+            list(self.doc_class.all(skip=-1))
+
 
 class RedisQueryTestCase(S3RedisQueryTestCase):
 

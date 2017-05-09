@@ -46,6 +46,13 @@ class RedisDB(DocDB):
 
         raw_docs = pipe.execute()
         for doc in raw_docs:
+            if skip and skip > 0:
+                skip -= 1
+                continue
+            if limit is not None and limit == 0:
+                break
+            elif limit:
+                limit -= 1
             yield cls(**{k.decode('utf-8'): v.decode('utf-8') for k, v in doc.items()})
 
     def get(self, doc_obj, doc_id):

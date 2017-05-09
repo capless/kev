@@ -61,6 +61,13 @@ class S3RedisDB(RedisDB):
             '{0}:all'.format(
             doc_class.get_class_name()))]
         for id in id_list:
+            if skip and skip > 0:
+                skip -= 1
+                continue
+            if limit is not None and limit == 0:
+                break
+            elif limit:
+                limit -= 1
             yield self.get(doc_class,id)
 
     def evaluate(self, filters_list, doc_class):
