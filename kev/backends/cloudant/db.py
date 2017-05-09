@@ -32,7 +32,7 @@ class CloudantDB(DocDB):
         document.fetch()
         document.delete()
 
-    def all(self, cls):
+    def all(self, cls, skip, limit):
         for doc in self._db:
             yield cls(**doc)
 

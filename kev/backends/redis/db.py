@@ -37,8 +37,7 @@ class RedisDB(DocDB):
         pipe = self.remove_indexes(doc_obj, pipe)
         pipe.execute()
 
-    def all(self, cls):
-
+    def all(self, cls, skip, limit):
         id_list = self._db.smembers('{0}:all'.format(
             cls.get_class_name()))
         pipe = self._db.pipeline()

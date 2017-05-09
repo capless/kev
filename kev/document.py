@@ -124,8 +124,12 @@ class BaseDocument(BaseSchema):
         return cls.get_db().get(cls, doc_id)
 
     @classmethod
-    def all(cls):
-        return cls.get_db().all(cls)
+    def all(cls, skip=None, limit=None):
+        if skip and skip < 0:
+            raise AttributeError("skip value should be an positive integer")
+        if limit and limit < 0:
+            raise AttributeError("limit value should be an positive integer")
+        return cls.get_db().all(cls, skip, limit)
 
     def flush_db(self):
         self._db.flush_db()

@@ -70,7 +70,7 @@ class S3DB(DocDB):
         doc_obj._index_change_list = doc_obj.get_indexes()
         self.remove_indexes(doc_obj)
 
-    def all(self,doc_class):
+    def all(self, doc_class, skip, limit):
         all_prefix = self.all_prefix(doc_class)
         id_list = [id.key for id in self._indexer.objects.filter(Prefix=all_prefix)]
 
