@@ -6,7 +6,7 @@ from cloudant.query import Query
 
 class CloudantDB(DocDB):
     db_class = client
-    backend_id = 'cloudantdb'
+    backend_id = 'cloudant'
     special_character = ':'
 
     def __init__(self, **kwargs):
