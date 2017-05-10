@@ -573,6 +573,21 @@ class CloudantTestCase(KevTestCase):
         qs = self.doc_class.objects().filter({'city': 'Durham'})
         self.assertEqual(112, qs.count())
 
+    def test_limit_and_skip(self):
+        docs = list(self.doc_class.all(limit=4))
+        for doc in docs:
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
+        self.assertEqual(3, len(list(self.doc_class.all(limit=4))))
+        self.assertEqual(3, len(list(self.doc_class.all(limit=3))))
+        self.assertEqual(2, len(list(self.doc_class.all(limit=2))))
+        self.assertEqual(1, len(list(self.doc_class.all(limit=1))))
+        self.assertEqual(2, len(list(self.doc_class.all(skip=1, limit=3))))
+        self.assertEqual(0, len(list(self.doc_class.all(skip=3, limit=3))))
+        with self.assertRaises(AttributeError):
+            list(self.doc_class.all(limit=0))
+        with self.assertRaises(AttributeError):
+            list(self.doc_class.all(skip=-1))
+
 
 if __name__ == '__main__':
     unittest.main()

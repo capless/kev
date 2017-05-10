@@ -33,8 +33,9 @@ class CloudantDB(DocDB):
         document.delete()
 
     def all(self, cls, skip, limit):
-        for doc in self._db:
-            yield cls(**doc)
+        for doc in self._db.all_docs(
+                skip=skip, limit=limit, include_docs=True)['rows']:
+            yield cls(**doc['doc'])
 
     def get(self, doc_obj, doc_id):
         doc = self._db[doc_obj.get_doc_id(doc_id)]
