@@ -41,8 +41,14 @@ class DynamoDB(DocDB):
         self._indexer.delete_item(Key={'_id': doc_obj._data['_id']})
 
     def all(self, cls, skip, limit):
-        obj_list = self._indexer.scan()['Items']
+        kwargs = {}
+        if limit is not None:
+            kwargs.update({'Limit': limit})
+        obj_list = self._indexer.scan(**kwargs)['Items']
         for doc in obj_list:
+            if skip and skip > 0:
+                skip -= 1
+                continue
             yield cls(**doc)
 
     def get(self, doc_obj, doc_id):
