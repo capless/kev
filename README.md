@@ -138,6 +138,14 @@ ec640abfd6
 
 [<TestDocument: Kev:ec640abfd6>,<TestDocument: George:aff7bcfb56>,<TestDocument: Sally:c38a77cfe4>]
 
+>>>TestDocument.all(skip=1)
+
+[<TestDocument: George:aff7bcfb56>,<TestDocument: Sally:c38a77cfe4>]
+
+>>>TestDocument.all(limit=2)
+
+[<TestDocument: Kev:ec640abfd6>,<TestDocument: George:aff7bcfb56>]
+
 ```
 ##### Get One Document
 ```python
