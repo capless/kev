@@ -127,8 +127,8 @@ class BaseDocument(BaseSchema):
     def all(cls, skip=None, limit=None):
         if skip and skip < 0:
             raise AttributeError("skip value should be an positive integer")
-        if limit and limit < 0:
-            raise AttributeError("limit value should be an positive integer")
+        if limit is not None and limit < 1:
+            raise AttributeError("limit value should be an positive integer, valid range 1-inf")
         return cls.get_db().all(cls, skip, limit)
 
     def flush_db(self):

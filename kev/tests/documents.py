@@ -316,11 +316,10 @@ class S3RedisQueryTestCase(KevTestCase):
         self.assertEqual(3, len(list(self.doc_class.all(limit=3))))
         self.assertEqual(2, len(list(self.doc_class.all(limit=2))))
         self.assertEqual(1, len(list(self.doc_class.all(limit=1))))
-        self.assertEqual(0, len(list(self.doc_class.all(limit=0))))
         self.assertEqual(2, len(list(self.doc_class.all(skip=1, limit=3))))
         self.assertEqual(0, len(list(self.doc_class.all(skip=3, limit=3))))
         with self.assertRaises(AttributeError):
-            list(self.doc_class.all(limit=-1))
+            list(self.doc_class.all(limit=0))
         with self.assertRaises(AttributeError):
             list(self.doc_class.all(skip=-1))
 
