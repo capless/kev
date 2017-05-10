@@ -32,6 +32,16 @@ kev_handler = KevHandler({
             'table': env('DYNAMO_TABLE_TEST'),
             'endpoint_url': env('DYNAMO_ENDPOINT_URL_TEST')
         }
+    },
+    'cloudant': {
+        'backend': 'kev.backends.cloudant.db.CloudantDB',
+        'connection': {
+            'username': env('CLOUDANT_USERNAME_TEST'),
+            'password': env('CLOUDANT_PASSWORD_TEST'),
+            'url': env('CLOUDANT_URL_TEST'),
+            'account': env('CLOUDANT_ACCOUNT_TEST'),
+            'table': env('CLOUDANT_TABLE_TEST'),
+        }
     }
 })
 
