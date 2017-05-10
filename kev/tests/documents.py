@@ -313,9 +313,8 @@ class S3RedisQueryTestCase(KevTestCase):
 
     def test_limit_and_skip(self):
         self.assertEqual(3, len(list(self.doc_class.all(limit=4))))
-        self.assertEqual(3, len(list(self.doc_class.all(limit=3))))
-        self.assertEqual(2, len(list(self.doc_class.all(limit=2))))
-        self.assertEqual(1, len(list(self.doc_class.all(limit=1))))
+        for x in range(1, 4):
+            self.assertEqual(x, len(list(self.doc_class.all(limit=x))))
         self.assertEqual(2, len(list(self.doc_class.all(skip=1, limit=3))))
         self.assertEqual(0, len(list(self.doc_class.all(skip=3, limit=3))))
         with self.assertRaises(AttributeError):
@@ -386,8 +385,10 @@ class DynamoTestCase(KevTestCase):
         self.assertEqual(1, qs.count())
 
     def test_all(self):
-        qs = self.doc_class.all()
-        self.assertEqual(3, len(list(qs)))
+        docs = list(self.doc_class.all())
+        self.assertEqual(3, len(docs))
+        for doc in docs:
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
 
     def test_non_unique_filter(self):
         qs = self.doc_class.objects().filter({'city': 'Durham'})
@@ -450,9 +451,8 @@ class DynamoTestCase(KevTestCase):
 
     def test_limit_and_skip(self):
         self.assertEqual(3, len(list(self.doc_class.all(limit=4))))
-        self.assertEqual(3, len(list(self.doc_class.all(limit=3))))
-        self.assertEqual(2, len(list(self.doc_class.all(limit=2))))
-        self.assertEqual(1, len(list(self.doc_class.all(limit=1))))
+        for x in range(1, 4):
+            self.assertEqual(x, len(list(self.doc_class.all(limit=x))))
         self.assertEqual(2, len(list(self.doc_class.all(skip=1, limit=3))))
         self.assertEqual(0, len(list(self.doc_class.all(skip=3, limit=3))))
         with self.assertRaises(AttributeError):
@@ -546,8 +546,10 @@ class CloudantTestCase(KevTestCase):
         self.assertEqual(1, qs.count())
 
     def test_all(self):
-        qs = self.doc_class.all()
-        self.assertEqual(3, len(list(qs)))
+        docs = list(self.doc_class.all())
+        self.assertEqual(3, len(docs))
+        for doc in docs:
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
 
     def test_non_unique_filter(self):
         qs = self.doc_class.objects().filter({'city': 'Durham'})
@@ -578,9 +580,8 @@ class CloudantTestCase(KevTestCase):
         for doc in docs:
             self.assertIn(doc.city, ['Durham', 'Charlotte'])
         self.assertEqual(3, len(list(self.doc_class.all(limit=4))))
-        self.assertEqual(3, len(list(self.doc_class.all(limit=3))))
-        self.assertEqual(2, len(list(self.doc_class.all(limit=2))))
-        self.assertEqual(1, len(list(self.doc_class.all(limit=1))))
+        for x in range(1, 4):
+            self.assertEqual(x, len(list(self.doc_class.all(limit=x))))
         self.assertEqual(2, len(list(self.doc_class.all(skip=1, limit=3))))
         self.assertEqual(0, len(list(self.doc_class.all(skip=3, limit=3))))
         with self.assertRaises(AttributeError):
