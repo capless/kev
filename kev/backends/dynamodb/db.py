@@ -44,12 +44,23 @@ class DynamoDB(DocDB):
         kwargs = {}
         if limit is not None:
             kwargs.update({'Limit': limit})
-        obj_list = self._indexer.scan(**kwargs)['Items']
-        for doc in obj_list:
-            if skip and skip > 0:
-                skip -= 1
-                continue
-            yield cls(**doc)
+        repeat = True
+        while repeat:
+            response = self._indexer.scan(**kwargs)
+            for doc in response['Items']:
+                if skip and skip > 0:
+                    skip -= 1
+                    continue
+                yield cls(**doc)
+            if 'LastEvaluatedKey' not in response:
+                repeat = False
+            else:
+                if limit is not None and response['Count'] == limit:
+                    repeat = False
+                elif limit is not None:
+                    limit = limit - response['Count']
+                    kwargs.update({'Limit': limit})
+                kwargs.update({'ExclusiveStartKey': response['LastEvaluatedKey']})
 
     def get(self, doc_obj, doc_id):
         response = self._indexer.get_item(Key={'_id': doc_obj.get_doc_id(doc_id)})
@@ -65,9 +76,15 @@ class DynamoDB(DocDB):
 
     # Indexing Methods
     def get_doc_list(self, filters_list, doc_class):
+        result = []
         query_params = self.parse_filters(filters_list, doc_class)
         response = self._indexer.query(**query_params)
-        return response['Items']
+        result = response['Items']
+        while 'LastEvaluatedKey' in response:
+            query_params.update({'ExclusiveStartKey': response['LastEvaluatedKey']})
+            response = self._indexer.query(**query_params)
+            result.extend(response['Items'])
+        return result
 
     def parse_filters(self, filters, doc_class):
         index_name = None

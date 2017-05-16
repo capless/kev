@@ -405,14 +405,23 @@ class DynamoTestCase(KevTestCase):
         self.assertEqual(self.t1.name, qs[0].name)
 
     def test_more_than_hundred_objects(self):
-        for i in range(110):
+        count = 4630
+        for i in range(count):
             doc = self.doc_class(name='Object_{0}'.format(i), slug='object-{0}'.format(i), gpa=4.6,
                                  email='object_{0}@ymca.com'.format(i), city='Durham')
             doc.save()
         qs = self.doc_class.all()
-        self.assertEqual(113, len(list(qs)))
+        self.assertEqual(count + 3, len(list(qs)))
         qs = self.doc_class.objects().filter({'city': 'Durham'})
-        self.assertEqual(112, qs.count())
+        self.assertEqual(count + 2, qs.count())
+        qs = self.doc_class.all(limit=count)
+        self.assertEqual(count, len(list(qs)))
+        qs = self.doc_class.all(skip=1)
+        self.assertEqual(count + 2, len(list(qs)))
+        qs = self.doc_class.all(limit=3)
+        self.assertEqual(3, len(list(qs)))
+        qs = self.doc_class.all(limit=count, skip=1)
+        self.assertEqual(count - 1, len(list(qs)))
 
     def test_local_backup(self):
 
