@@ -44,8 +44,7 @@ class DynamoDB(DocDB):
         kwargs = {}
         if limit is not None:
             kwargs.update({'Limit': limit})
-        repeat = True
-        while repeat:
+        while True:
             response = self._indexer.scan(**kwargs)
             for doc in response['Items']:
                 if skip and skip > 0:
@@ -53,10 +52,10 @@ class DynamoDB(DocDB):
                     continue
                 yield cls(**doc)
             if 'LastEvaluatedKey' not in response:
-                repeat = False
+                break
             else:
                 if limit is not None and response['Count'] == limit:
-                    repeat = False
+                    break
                 elif limit is not None:
                     limit = limit - response['Count']
                     kwargs.update({'Limit': limit})
@@ -70,9 +69,15 @@ class DynamoDB(DocDB):
         return doc_obj(**doc)
 
     def flush_db(self):
-        obj_list = self._indexer.scan()['Items']
-        for i in obj_list:
-            self._indexer.delete_item(Key={'_id': i['_id']})
+        kwargs = {}
+        while True:
+            response = self._indexer.scan(**kwargs)
+            for doc in response['Items']:
+                self._indexer.delete_item(Key={'_id': doc['_id']})
+            if 'LastEvaluatedKey' not in response:
+                break
+            else:
+                kwargs.update({'ExclusiveStartKey': response['LastEvaluatedKey']})
 
     # Indexing Methods
     def get_doc_list(self, filters_list, doc_class):
