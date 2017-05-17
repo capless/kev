@@ -72,16 +72,15 @@ class S3DB(DocDB):
 
     def all(self, doc_class, skip, limit):
         all_prefix = self.all_prefix(doc_class)
-        id_list = [id.key for id in self._indexer.objects.filter(Prefix=all_prefix)]
-
+        if limit is None:
+            response = self._indexer.objects.filter(Prefix=all_prefix)
+        else:
+            response = self._indexer.objects.filter(Prefix=all_prefix).limit(limit)
+        id_list = [id.key for id in response]
         for id in id_list:
             if skip and skip > 0:
                 skip -= 1
                 continue
-            if limit is not None and limit == 0:
-                break
-            elif limit:
-                limit -= 1
             yield self.get_raw(doc_class,id)
 
     #Indexing Methods
