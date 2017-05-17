@@ -170,7 +170,6 @@ class S3RedisQueryTestCase(KevTestCase):
     doc_class = S3RedisTestDocumentSlug
 
     def setUp(self):
-
         self.t1 = self.doc_class(name='Goo and Sons', slug='goo-sons', gpa=3.2,
                                  email='goo@sons.com', city="Durham")
         self.t1.save()
@@ -352,6 +351,18 @@ class S3QueryTestCase(S3RedisQueryTestCase):
     def test_non_unique_wildcard_filter(self):
         pass
 
+    @unittest.skip("Takes more than 10 min to complete.")
+    def test_more_than_hundred_objects(self):
+        count = 1100
+        for i in range(count):
+            doc = self.doc_class(name='Object_{0}'.format(i), slug='object-{0}'.format(i), gpa=4.6,
+                                 email='object_{0}@ymca.com'.format(i), city='Durham')
+            doc.save()
+        qs = self.doc_class.all()
+        self.assertEqual(count + 3, len(list(qs)))
+        for doc in list(qs):
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
+
 
 class DynamoTestCase(KevTestCase):
 
@@ -404,7 +415,11 @@ class DynamoTestCase(KevTestCase):
         self.assertEqual(1, qs.count())
         self.assertEqual(self.t1.name, qs[0].name)
 
+    @unittest.skip("Takes more than 10 min to complete.")
     def test_more_than_hundred_objects(self):
+        # 1 MB limit for scan and query
+        # http://boto3.readthedocs.io/en/latest/reference/services/dynamodb.html#DynamoDB.Table.query
+        # http://boto3.readthedocs.io/en/latest/reference/services/dynamodb.html#DynamoDB.Table.scan
         count = 4630
         for i in range(count):
             doc = self.doc_class(name='Object_{0}'.format(i), slug='object-{0}'.format(i), gpa=4.6,
@@ -412,6 +427,8 @@ class DynamoTestCase(KevTestCase):
             doc.save()
         qs = self.doc_class.all()
         self.assertEqual(count + 3, len(list(qs)))
+        for doc in list(qs):
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
         qs = self.doc_class.objects().filter({'city': 'Durham'})
         self.assertEqual(count + 2, qs.count())
         qs = self.doc_class.all(limit=count)
@@ -574,15 +591,19 @@ class CloudantTestCase(KevTestCase):
         self.assertEqual(1, qs.count())
         self.assertEqual(self.t1.name, qs[0].name)
 
+    @unittest.skip("Takes more than 10 min to complete.")
     def test_more_than_hundred_objects(self):
-        for i in range(110):
+        count = 4630
+        for i in range(count):
             doc = self.doc_class(name='Object_{0}'.format(i), slug='object-{0}'.format(i), gpa=4.6,
                                  email='object_{0}@ymca.com'.format(i), city='Durham')
             doc.save()
         qs = self.doc_class.all()
-        self.assertEqual(113, len(list(qs)))
+        self.assertEqual(count + 3, len(list(qs)))
+        for doc in list(qs):
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
         qs = self.doc_class.objects().filter({'city': 'Durham'})
-        self.assertEqual(112, qs.count())
+        self.assertEqual(count + 2, qs.count())
 
     def test_limit_and_skip(self):
         docs = list(self.doc_class.all(limit=4))
