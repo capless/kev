@@ -170,7 +170,6 @@ class S3RedisQueryTestCase(KevTestCase):
     doc_class = S3RedisTestDocumentSlug
 
     def setUp(self):
-
         self.t1 = self.doc_class(name='Goo and Sons', slug='goo-sons', gpa=3.2,
                                  email='goo@sons.com', city="Durham")
         self.t1.save()
@@ -311,6 +310,17 @@ class S3RedisQueryTestCase(KevTestCase):
         self.doc_class().restore('s3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
         self.assertEqual(len(list(self.doc_class.all())), 3)
 
+    def test_limit_and_skip(self):
+        self.assertEqual(3, len(list(self.doc_class.all(limit=4))))
+        for x in range(1, 4):
+            self.assertEqual(x, len(list(self.doc_class.all(limit=x))))
+        self.assertEqual(2, len(list(self.doc_class.all(skip=1, limit=3))))
+        self.assertEqual(0, len(list(self.doc_class.all(skip=3, limit=3))))
+        with self.assertRaises(AttributeError):
+            list(self.doc_class.all(limit=0))
+        with self.assertRaises(AttributeError):
+            list(self.doc_class.all(skip=-1))
+
 
 class RedisQueryTestCase(S3RedisQueryTestCase):
 
@@ -340,6 +350,18 @@ class S3QueryTestCase(S3RedisQueryTestCase):
 
     def test_non_unique_wildcard_filter(self):
         pass
+
+    @unittest.skip("Takes more than 10 min to complete.")
+    def test_more_than_hundred_objects(self):
+        count = 1100
+        for i in range(count):
+            doc = self.doc_class(name='Object_{0}'.format(i), slug='object-{0}'.format(i), gpa=4.6,
+                                 email='object_{0}@ymca.com'.format(i), city='Durham')
+            doc.save()
+        qs = self.doc_class.all()
+        self.assertEqual(count + 3, len(list(qs)))
+        for doc in list(qs):
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
 
 
 class DynamoTestCase(KevTestCase):
@@ -374,8 +396,10 @@ class DynamoTestCase(KevTestCase):
         self.assertEqual(1, qs.count())
 
     def test_all(self):
-        qs = self.doc_class.all()
-        self.assertEqual(3, len(list(qs)))
+        docs = list(self.doc_class.all())
+        self.assertEqual(3, len(docs))
+        for doc in docs:
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
 
     def test_non_unique_filter(self):
         qs = self.doc_class.objects().filter({'city': 'Durham'})
@@ -391,15 +415,30 @@ class DynamoTestCase(KevTestCase):
         self.assertEqual(1, qs.count())
         self.assertEqual(self.t1.name, qs[0].name)
 
+    @unittest.skip("Takes more than 10 min to complete.")
     def test_more_than_hundred_objects(self):
-        for i in range(110):
+        # 1 MB limit for scan and query
+        # http://boto3.readthedocs.io/en/latest/reference/services/dynamodb.html#DynamoDB.Table.query
+        # http://boto3.readthedocs.io/en/latest/reference/services/dynamodb.html#DynamoDB.Table.scan
+        count = 4630
+        for i in range(count):
             doc = self.doc_class(name='Object_{0}'.format(i), slug='object-{0}'.format(i), gpa=4.6,
                                  email='object_{0}@ymca.com'.format(i), city='Durham')
             doc.save()
         qs = self.doc_class.all()
-        self.assertEqual(113, len(list(qs)))
+        self.assertEqual(count + 3, len(list(qs)))
+        for doc in list(qs):
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
         qs = self.doc_class.objects().filter({'city': 'Durham'})
-        self.assertEqual(112, qs.count())
+        self.assertEqual(count + 2, qs.count())
+        qs = self.doc_class.all(limit=count)
+        self.assertEqual(count, len(list(qs)))
+        qs = self.doc_class.all(skip=1)
+        self.assertEqual(count + 2, len(list(qs)))
+        qs = self.doc_class.all(limit=3)
+        self.assertEqual(3, len(list(qs)))
+        qs = self.doc_class.all(limit=count, skip=1)
+        self.assertEqual(count - 1, len(list(qs)))
 
     def test_local_backup(self):
 
@@ -435,6 +474,17 @@ class DynamoTestCase(KevTestCase):
         self.assertEqual(len(list(self.doc_class.all())),0)
         self.doc_class().restore('s3://{}/kev/test-backup.json'.format(env('S3_BUCKET_TEST')))
         self.assertEqual(len(list(self.doc_class.all())), 3)
+
+    def test_limit_and_skip(self):
+        self.assertEqual(3, len(list(self.doc_class.all(limit=4))))
+        for x in range(1, 4):
+            self.assertEqual(x, len(list(self.doc_class.all(limit=x))))
+        self.assertEqual(2, len(list(self.doc_class.all(skip=1, limit=3))))
+        self.assertEqual(0, len(list(self.doc_class.all(skip=3, limit=3))))
+        with self.assertRaises(AttributeError):
+            list(self.doc_class.all(limit=0))
+        with self.assertRaises(AttributeError):
+            list(self.doc_class.all(skip=-1))
 
 
 class DynamoIndexTestCase(KevTestCase):
@@ -522,8 +572,10 @@ class CloudantTestCase(KevTestCase):
         self.assertEqual(1, qs.count())
 
     def test_all(self):
-        qs = self.doc_class.all()
-        self.assertEqual(3, len(list(qs)))
+        docs = list(self.doc_class.all())
+        self.assertEqual(3, len(docs))
+        for doc in docs:
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
 
     def test_non_unique_filter(self):
         qs = self.doc_class.objects().filter({'city': 'Durham'})
@@ -539,15 +591,33 @@ class CloudantTestCase(KevTestCase):
         self.assertEqual(1, qs.count())
         self.assertEqual(self.t1.name, qs[0].name)
 
+    @unittest.skip("Takes more than 10 min to complete.")
     def test_more_than_hundred_objects(self):
-        for i in range(110):
+        count = 4630
+        for i in range(count):
             doc = self.doc_class(name='Object_{0}'.format(i), slug='object-{0}'.format(i), gpa=4.6,
                                  email='object_{0}@ymca.com'.format(i), city='Durham')
             doc.save()
         qs = self.doc_class.all()
-        self.assertEqual(113, len(list(qs)))
+        self.assertEqual(count + 3, len(list(qs)))
+        for doc in list(qs):
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
         qs = self.doc_class.objects().filter({'city': 'Durham'})
-        self.assertEqual(112, qs.count())
+        self.assertEqual(count + 2, qs.count())
+
+    def test_limit_and_skip(self):
+        docs = list(self.doc_class.all(limit=4))
+        for doc in docs:
+            self.assertIn(doc.city, ['Durham', 'Charlotte'])
+        self.assertEqual(3, len(list(self.doc_class.all(limit=4))))
+        for x in range(1, 4):
+            self.assertEqual(x, len(list(self.doc_class.all(limit=x))))
+        self.assertEqual(2, len(list(self.doc_class.all(skip=1, limit=3))))
+        self.assertEqual(0, len(list(self.doc_class.all(skip=3, limit=3))))
+        with self.assertRaises(AttributeError):
+            list(self.doc_class.all(limit=0))
+        with self.assertRaises(AttributeError):
+            list(self.doc_class.all(skip=-1))
 
 
 if __name__ == '__main__':

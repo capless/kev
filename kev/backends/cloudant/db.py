@@ -6,7 +6,7 @@ from cloudant.query import Query
 
 class CloudantDB(DocDB):
     db_class = client
-    backend_id = 'cloudantdb'
+    backend_id = 'cloudant'
     special_character = ':'
 
     def __init__(self, **kwargs):
@@ -32,9 +32,10 @@ class CloudantDB(DocDB):
         document.fetch()
         document.delete()
 
-    def all(self, cls):
-        for doc in self._db:
-            yield cls(**doc)
+    def all(self, cls, skip, limit):
+        for doc in self._db.all_docs(
+                skip=skip, limit=limit, include_docs=True)['rows']:
+            yield cls(**doc['doc'])
 
     def get(self, doc_obj, doc_id):
         doc = self._db[doc_obj.get_doc_id(doc_id)]

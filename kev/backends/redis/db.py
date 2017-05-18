@@ -37,8 +37,7 @@ class RedisDB(DocDB):
         pipe = self.remove_indexes(doc_obj, pipe)
         pipe.execute()
 
-    def all(self, cls):
-
+    def all(self, cls, skip, limit):
         id_list = self._db.smembers('{0}:all'.format(
             cls.get_class_name()))
         pipe = self._db.pipeline()
@@ -47,6 +46,13 @@ class RedisDB(DocDB):
 
         raw_docs = pipe.execute()
         for doc in raw_docs:
+            if skip and skip > 0:
+                skip -= 1
+                continue
+            if limit is not None and limit == 0:
+                break
+            elif limit:
+                limit -= 1
             yield cls(**{k.decode('utf-8'): v.decode('utf-8') for k, v in doc.items()})
 
     def get(self, doc_obj, doc_id):

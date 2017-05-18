@@ -40,10 +40,26 @@ class DynamoDB(DocDB):
     def delete(self, doc_obj):
         self._indexer.delete_item(Key={'_id': doc_obj._data['_id']})
 
-    def all(self, cls):
-        obj_list = self._indexer.scan()['Items']
-        for doc in obj_list:
-            yield cls(**doc)
+    def all(self, cls, skip, limit):
+        kwargs = {}
+        if limit is not None:
+            kwargs.update({'Limit': limit})
+        while True:
+            response = self._indexer.scan(**kwargs)
+            for doc in response['Items']:
+                if skip and skip > 0:
+                    skip -= 1
+                    continue
+                yield cls(**doc)
+            if 'LastEvaluatedKey' not in response:
+                break
+            else:
+                if limit is not None and response['Count'] == limit:
+                    break
+                elif limit is not None:
+                    limit = limit - response['Count']
+                    kwargs.update({'Limit': limit})
+                kwargs.update({'ExclusiveStartKey': response['LastEvaluatedKey']})
 
     def get(self, doc_obj, doc_id):
         response = self._indexer.get_item(Key={'_id': doc_obj.get_doc_id(doc_id)})
@@ -53,15 +69,27 @@ class DynamoDB(DocDB):
         return doc_obj(**doc)
 
     def flush_db(self):
-        obj_list = self._indexer.scan()['Items']
-        for i in obj_list:
-            self._indexer.delete_item(Key={'_id': i['_id']})
+        kwargs = {}
+        while True:
+            response = self._indexer.scan(**kwargs)
+            for doc in response['Items']:
+                self._indexer.delete_item(Key={'_id': doc['_id']})
+            if 'LastEvaluatedKey' not in response:
+                break
+            else:
+                kwargs.update({'ExclusiveStartKey': response['LastEvaluatedKey']})
 
     # Indexing Methods
     def get_doc_list(self, filters_list, doc_class):
+        result = []
         query_params = self.parse_filters(filters_list, doc_class)
         response = self._indexer.query(**query_params)
-        return response['Items']
+        result = response['Items']
+        while 'LastEvaluatedKey' in response:
+            query_params.update({'ExclusiveStartKey': response['LastEvaluatedKey']})
+            response = self._indexer.query(**query_params)
+            result.extend(response['Items'])
+        return result
 
     def parse_filters(self, filters, doc_class):
         index_name = None

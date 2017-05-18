@@ -55,12 +55,19 @@ class S3RedisDB(RedisDB):
         pipe = self.remove_indexes(doc_obj, pipe)
         pipe.execute()
 
-    def all(self,doc_class):
+    def all(self, doc_class, skip, limit):
 
         id_list = [self.parse_id(id) for id in self._indexer.smembers(
             '{0}:all'.format(
             doc_class.get_class_name()))]
         for id in id_list:
+            if skip and skip > 0:
+                skip -= 1
+                continue
+            if limit is not None and limit == 0:
+                break
+            elif limit:
+                limit -= 1
             yield self.get(doc_class,id)
 
     def evaluate(self, filters_list, doc_class):

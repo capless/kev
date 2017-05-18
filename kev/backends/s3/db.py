@@ -70,11 +70,17 @@ class S3DB(DocDB):
         doc_obj._index_change_list = doc_obj.get_indexes()
         self.remove_indexes(doc_obj)
 
-    def all(self,doc_class):
+    def all(self, doc_class, skip, limit):
         all_prefix = self.all_prefix(doc_class)
-        id_list = [id.key for id in self._indexer.objects.filter(Prefix=all_prefix)]
-
+        if limit is None:
+            response = self._indexer.objects.filter(Prefix=all_prefix)
+        else:
+            response = self._indexer.objects.filter(Prefix=all_prefix).limit(limit)
+        id_list = [id.key for id in response]
         for id in id_list:
+            if skip and skip > 0:
+                skip -= 1
+                continue
             yield self.get_raw(doc_class,id)
 
     #Indexing Methods
