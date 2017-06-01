@@ -29,13 +29,19 @@ class BaseDocument(BaseSchema):
     def __init__(self, **kwargs):
         self._data = self.process_schema_kwargs(kwargs)
         self._db = self.get_db()
-        self._s3 = boto3.resource('s3')
+        self._s3_cache = None
         self._create_error_dict = kwargs.get('create_error_dict') or self._create_error_dict
         if self._create_error_dict:
             self._errors = {}
         if '_id' in self._data:
             self.set_pk(self._data['_id'])
         self._index_change_list = []
+
+    @property
+    def _s3(self):
+        if self._s3_cache is None:
+            self._s3_cache= boto3.resource('s3')
+        return self._s3_cache
 
     def __repr__(self):
         return '<{class_name}: {uni}:{id}>'.format(
