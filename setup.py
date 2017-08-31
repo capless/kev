@@ -12,7 +12,7 @@ Kev
 
 K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value \
 stores and document databases based on Valley. Currently supported \
-backends are Redis, S3, DynamoDB and a S3/Redis hybrid backend.
+backends are Redis, S3 and a S3/Redis hybrid backend.
 
 """
 
@@ -29,13 +29,13 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Environment :: Web Environment",
     ],
-    keywords='redis, s3, dynamodb',
+    keywords='redis, s3',
     author='Brian Jinwright',
     author_email='opensource@ipoots.com',
     maintainer='Brian Jinwright',
     packages=find_packages(),
     url='https://github.com/capless/kev',
-    license='Apache',
+    license='GPLv3',
     install_requires=[str(ir.req) for ir in install_reqs],
     include_package_data=True,
     zip_safe=False,
