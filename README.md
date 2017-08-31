@@ -2,7 +2,7 @@
 
 
 # kev
-K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases based on [**Valley**](https://www.github.com/capless/valley). Currently supported backends are Redis, S3, DynamoDB, Cloudant and a S3/Redis hybrid backend.
+K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases based on [**Valley**](https://www.github.com/capless/valley). Currently supported backends are Redis, S3 and a S3/Redis hybrid backend.
 
 [![Build Status](https://travis-ci.org/capless/kev.svg?branch=master)](https://travis-ci.org/capless/kev)
 
@@ -50,21 +50,6 @@ kev_handler = KevHandler({
             'port': 6379,
         }
     },
-    'dynamodb': {
-        'backend': 'kev.backends.dynamodb.db.DynamoDB',
-        'connection': {
-            'table': 'your-dynamodb-table',
-        }
-    },
-    'cloudant': {
-        'backend': 'kev.backends.cloudant.db.CloudantDB',
-        'connection': {
-            'username': 'admin',
-            'password': 'pass',
-            'account_name': 'your-account-name',
-            'table': 'your-table-name',
-        }
-    }
 })
 ```
 ### Setup the Models
@@ -189,141 +174,6 @@ Prefix filters currently only work with the S3 backend. Use wildcard filters wit
 ```python
 >>>TestDocument.objects().filter({'state':'N'})
 [<TestDocument: Kev:ec640abfd6>]
-```
-### DynamoDB setup
-#### Create a table
-* **Table name** should be between 3 and 255 characters long. (A-Z,a-z,0-9,_,-,.)
-* **Primary key** (partition key) should be equal to `_id`
-
-#### Filter Documents
-If you want to make `filter()` queries, you should create an index for every attribute that you want to filter by.
-* **Primary key** should be equal to attribute name.
-* **Index name** should be equal to attribute name postfixed by *"-index"*. (It will be filled by AWS automatically).
-For example, for attribute *"city"*: *Primary key* = *"city"* and index name = *"city-index"*.
-* **Index name** can be directly specified by `index_name` argument:
-```python
-    name = CharProperty(required=True,unique=True,min_length=5,max_length=20,index_name='name_index')
-```
-- **IMPORTANT: In other words, if your indexed attribute is named city, then your index name should be city-index,
-if you didn't specify `index_name` argument.**
-* **Projected attributes**: *All*.
-
-### Use DynamoDB locally
-#### Run DynamoDB
-* with persistent storage `docker run -d -p 8000:8000 -v /tmp/data:/data/ dwmkerr/dynamodb -dbPath /data/`
-
-#### Configuration
-**Example:** loading.py
-```python
-from kev.loading import KevHandler
-
-
-kev_handler = KevHandler({
-    'dynamodb': {
-        'backend': 'kev.backends.dynamodb.db.DynamoDB',
-        'connection': {
-            'table': 'your-dynamodb-table',
-            'endpoint_url': 'http://127.0.0.1:8000'
-        }
-    }
-})
-```
-
-#### Testing
-##### Run DynamoDB
-* in memory (best performance) `docker run -d -p 8000:8000 dwmkerr/dynamodb -inMemory`
-
-##### Create a table for testing.
-
-```python
-import boto3
-
-
-table_wcu = 2000
-table_rcu = 2000
-index_wcu = 3000
-index_rcu = 2000
-table_name = 'localtable'
-
-dynamodb = boto3.resource('dynamodb', endpoint_url="http://127.0.0.1:8000")
-dynamodb.create_table(TableName=table_name, KeySchema=[{'AttributeName': '_id', 'KeyType': 'HASH'}],
-                      ProvisionedThroughput={'ReadCapacityUnits': table_rcu,
-                                             'WriteCapacityUnits': table_wcu},
-                      AttributeDefinitions=[{'AttributeName': '_id', 'AttributeType': 'S'},
-                                            {u'AttributeName': u'city', u'AttributeType': u'S'},
-                                            {u'AttributeName': u'email', u'AttributeType': u'S'},
-                                            {u'AttributeName': u'name', u'AttributeType': u'S'},
-                                            {u'AttributeName': u'slug', u'AttributeType': u'S'}],
-                      GlobalSecondaryIndexes=[
-                          {'IndexName': 'city-index', 'Projection': {'ProjectionType': 'ALL'},
-                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
-                                                     'ReadCapacityUnits': index_rcu},
-                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'city'}]},
-                          {'IndexName': 'name-index', 'Projection': {'ProjectionType': 'ALL'},
-                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
-                                                     'ReadCapacityUnits': index_rcu},
-                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'name'}]},
-                          {'IndexName': 'slug-index', 'Projection': {'ProjectionType': 'ALL'},
-                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
-                                                     'ReadCapacityUnits': index_rcu},
-                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'slug'}]},
-                          {'IndexName': 'email-index', 'Projection': {'ProjectionType': 'ALL'},
-                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
-                                                     'ReadCapacityUnits': index_rcu},
-                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'email'}]}])
-```
-##### Setup environment variables.
-```bash
-export DYNAMO_TABLE_TEST='localtable'
-export DYNAMO_ENDPOINT_URL_TEST='http://127.0.0.1:8000'
-```
-
-### Cloudant setup
-#### Cloudant Developer Edition [Docker Hub](https://hub.docker.com/r/ibmcom/cloudant-developer/)
-
-* Download the image from Docker Hub:
-
- `docker pull ibmcom/cloudant-developer`
-* Run the following:
-
- `docker run --detach --volume cloudant:/srv --name cloudant-developer  --publish 8080:80 \
-       --hostname cloudant.dev ibmcom/cloudant-developer`
-* To view the End User License run the following:
-
-`docker exec -ti cloudant-developer cast license`
-
-* You can start and stop the container by following commands:
-
-`docker start cloudant-developer` and `docker stop cloudant-developer`
-
-You can access the cloudant dashboard [http://localhost:8080/dashboard.html](http://localhost:8080/dashboard.html)
-
-The default login credentials are: username=admin, password=pass
-
-##### Configuration for Cloudant Developer Edition
-**Example:** loading.py
-```python
-from kev.loading import KevHandler
-
-kev_handler = KevHandler({
-    'cloudant': {
-        'backend': 'kev.backends.cloudant.db.CloudantDB',
-        'connection': {
-            'username': 'admin',
-            'password': 'pass',
-            'table': 'your-cloudant-table',
-            'url': 'http://127.0.0.1:8080'
-        }
-    }
-})
-```
-
-#### Setup environment variables for testing.
-```bash
-export CLOUDANT_USERNAME_TEST='admin'
-export CLOUDANT_PASSWORD_TEST='pass'
-export CLOUDANT_URL_TEST='http://127.0.0.1:8080/'
-export CLOUDANT_TABLE_TEST='localtable'
 ```
 
 ### Backup and Restore
