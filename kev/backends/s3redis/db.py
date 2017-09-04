@@ -70,7 +70,7 @@ class S3RedisDB(RedisDB):
                 limit -= 1
             yield self.get(doc_class,id)
 
-    def evaluate(self, filters_list, doc_class):
+    def evaluate(self, filters_list, sortingp_list, doc_class):
         id_list = self.get_id_list(filters_list)
         for id in id_list:
             yield doc_class.get(self.parse_id(id))

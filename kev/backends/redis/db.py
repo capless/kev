@@ -97,7 +97,7 @@ class RedisDB(DocDB):
                               )
         return pipeline
 
-    def evaluate(self, filters_list, doc_class):
+    def evaluate(self, filters_list, sortingp_list, doc_class):
         id_list = self.get_id_list(filters_list)
         pipe = self._db.pipeline()
         for id in id_list:

@@ -103,7 +103,7 @@ class S3DB(DocDB):
                 doc_obj._id)).put(Body='')
 
 
-    def evaluate(self, filters_list, doc_class):
+    def evaluate(self, filters_list, sorting_param, doc_class):
         if len(filters_list) == 1:
             filter_value = '{}/'.format(filters_list[0])
 
