@@ -146,22 +146,16 @@ class S3RedisQueryTestCase(KevTestCase):
     doc_class = S3RedisTestDocumentSlug
 
     def setUp(self):
-        self.t1 = self.doc_class(name='Goo and Sons', slug='goo-sons', gpa=3.2,
+        self.t1 = self.doc_class(name='Goo and Sons', slug='goo-sons', gpa=3.0,
                                  email='goo@sons.com', city="Durham")
         self.t1.save()
         self.t2 = self.doc_class(
-            name='Great Mountain',
-            slug='great-mountain',
-            gpa=3.2,
-            email='great@mountain.com',
-            city='Charlotte')
+            name='Great Mountain', slug='great-mountain',
+            gpa=3.1, email='great@mountain.com', city='Charlotte')
         self.t2.save()
         self.t3 = self.doc_class(
-            name='Lakewoood YMCA',
-            slug='lakewood-ymca',
-            gpa=3.2,
-            email='lakewood@ymca.com',
-            city='Durham')
+            name='Lakewoood YMCA', slug='lakewood-ymca', gpa=3.2,
+            email='lakewood@ymca.com', city='Durham')
         self.t3.save()
 
     def test_non_unique_filter(self):
@@ -301,6 +295,26 @@ class S3RedisQueryTestCase(KevTestCase):
 class RedisQueryTestCase(S3RedisQueryTestCase):
 
     doc_class = RedisTestDocumentSlug
+
+    def test_sorting(self):
+        qs = self.doc_class.objects().filter({'city': 'Durham'}).sort_by('name')
+        self.assertEqual(2, qs.count())
+        self.assertEqual(qs[0].name, 'Goo and Sons')
+        self.assertEqual(qs[1].name, 'Lakewoood YMCA')
+        qs = self.doc_class.objects().filter({'city': 'Durham'}).sort_by('name', reverse=True)
+        self.assertEqual(qs[0].name, 'Lakewoood YMCA')
+        self.assertEqual(qs[1].name, 'Goo and Sons')
+        qs = self.doc_class.objects().filter({'city': 'Durham'}).sort_by('gpa')
+        self.assertEqual(qs[0].gpa, 3.0)
+        self.assertEqual(qs[1].gpa, 3.2)
+        qs = self.doc_class.objects().filter({'city': 'Durham'}).sort_by('gpa', reverse=True)
+        self.assertEqual(qs[0].gpa, 3.2)
+        self.assertEqual(qs[1].gpa, 3.0)
+        with self.assertRaises(ValueError) as vm:
+            qs = self.doc_class.objects().filter({'city': 'Durham'}).sort_by('nonexistent_field')
+            qs.count()
+            self.assertEqual(str(vm.exception),
+                             "Field 'nonexistent_field' doesn't exists in a document")
 
 
 class S3QueryTestCase(S3RedisQueryTestCase):
