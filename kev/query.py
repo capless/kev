@@ -33,13 +33,14 @@ class QuerySetMixin(object):
     query_type = None
 
     def __init__(self, doc_class, q=None, parent_q=None, sorting_p=None,
-                 parent_sorting_p=None):
+                 parent_sorting_p=None, all_param=None):
         self.parent_q = parent_q
         self._result_cache = None
         self._doc_class = doc_class
         self.q = q
         self.sortingp_list = [sorting_p] if sorting_p is not None else []
         self.evaluated = False
+        self.all_param = all_param if all_param else AllParam()
         self._db = self._doc_class.get_db()
         if q and parent_q:
             self.q = self.combine_qs()
@@ -104,7 +105,7 @@ class QuerySet(QuerySetMixin):
 
     def sort_by(self, key, reverse=False):
         sorting_p = SortingParam(key, reverse)
-        return QuerySet(self._doc_class, self.q, None, sorting_p, self.sortingp_list)
+        return QuerySet(self._doc_class, self.q, None, sorting_p, self.sortingp_list, all_param=self.all_param)
 
     def get(self, q):
         qs = QuerySet(self._doc_class, q, self.q)
@@ -116,10 +117,16 @@ class QuerySet(QuerySetMixin):
             raise QueryError('This query did not return a result.')
         return qs[0]
 
+    def all(self, skip=None, limit=None):
+        all_param = AllParam(all=True, skip=skip, limit=limit)
+        return QuerySet(self._doc_class, None, None, all_param=all_param)
+
     def evaluate(self):
-        filters_list = self.prepare_filters()
+        filters_list = None
+        if not self.all_param.all:
+            filters_list = self.prepare_filters()
         return self._doc_class.get_db().evaluate(filters_list, self.sortingp_list,
-                                                 self._doc_class)
+                                                 self.all_param, self._doc_class)
 
 
 class QueryManager(object):
@@ -130,6 +137,7 @@ class QueryManager(object):
         self.filter = QuerySet(self._doc_class).filter
         self.get = QuerySet(self._doc_class).get
         self.sort_by = QuerySet(self._doc_class).sort_by
+        self.all = QuerySet(self._doc_class).all
 
 
 class SortingParam(object):
@@ -156,3 +164,15 @@ class SortingParam(object):
     def attr_sort(sortinp_list):
         """Helper method to sort by the attributes named by strings of attrs in order"""
         return lambda x: [getattr(x, sortingp.key) for sortingp in sortinp_list]
+
+
+class AllParam(object):
+
+    def __init__(self, all=False, skip=None, limit=None):
+        self.all = all
+        self.skip = skip
+        self.limit = limit
+
+    def __repr__(self):
+        return "%s(all='%s', skip='%s', limit=%s)" % (self.__class__, self.all,self.skip,
+                                                      self.limit)

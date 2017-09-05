@@ -93,18 +93,25 @@ class RedisDB(DocDB):
                               doc_obj._id)
         return pipeline
 
-    def evaluate(self, filters_list, sortingp_list, doc_class):
-        id_list = self.get_id_list(filters_list)
-        pipe = self._db.pipeline()
-        for id in id_list:
-            pipe.hgetall(id)
-        raw_docs = pipe.execute()
-        if len(sortingp_list) > 0:
-            docs_list = [doc_class(**{k.decode(): v.decode() for k, v in doc.items()})\
-                         for doc in raw_docs]
-            sorted_list = self.sort(sortingp_list, docs_list, doc_class)
-            for doc in sorted_list:
-                  yield doc
+    def evaluate(self, filters_list, sortingp_list, all_param, doc_class):
+        if all_param.all and len(sortingp_list) > 0:
+            docs_list = list(self.all(doc_class, skip=all_param.skip, limit=all_param.limit))
+            for doc in self.sort(sortingp_list, docs_list, doc_class):
+                yield doc
+        elif all_param.all:
+            yield self.all(doc_class, skip=all_param.skip, limit=all_param.limit)
         else:
-            for doc in raw_docs:
-                yield doc_class(**{k.decode(): v.decode() for k, v in doc.items()})
+            id_list = self.get_id_list(filters_list)
+            pipe = self._db.pipeline()
+            for id in id_list:
+                pipe.hgetall(id)
+            raw_docs = pipe.execute()
+            if len(sortingp_list) > 0:
+                docs_list = [doc_class(**{k.decode(): v.decode() for k, v in doc.items()})\
+                             for doc in raw_docs]
+                sorted_list = self.sort(sortingp_list, docs_list, doc_class)
+                for doc in sorted_list:
+                      yield doc
+            else:
+                for doc in raw_docs:
+                    yield doc_class(**{k.decode(): v.decode() for k, v in doc.items()})

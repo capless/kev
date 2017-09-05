@@ -310,6 +310,11 @@ class S3RedisQueryTestCase(KevTestCase):
             qs.count()
             self.assertEqual(str(vm.exception),
                              "Field 'nonexistent_field' doesn't exists in a document")
+        qs = self.doc_class.objects().all().sort_by('name')
+        self.assertEqual(3, qs.count())
+        self.assertEqual(qs[0].name, 'Goo and Sons')
+        qs = self.doc_class.objects().all().sort_by('name', reverse=True)
+        self.assertEqual(qs[2].name, 'Goo and Sons')
 
 class RedisQueryTestCase(S3RedisQueryTestCase):
 
@@ -334,6 +339,11 @@ class RedisQueryTestCase(S3RedisQueryTestCase):
             qs.count()
             self.assertEqual(str(vm.exception),
                              "Field 'nonexistent_field' doesn't exists in a document")
+        qs = self.doc_class.objects().all().sort_by('name')
+        self.assertEqual(3, qs.count())
+        self.assertEqual(qs[0].name, 'Goo and Sons')
+        qs = self.doc_class.objects().all().sort_by('name', reverse=True)
+        self.assertEqual(qs[2].name, 'Goo and Sons')
 
 
 class S3QueryTestCase(S3RedisQueryTestCase):

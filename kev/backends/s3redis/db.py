@@ -71,13 +71,20 @@ class S3RedisDB(RedisDB):
                 limit -= 1
             yield self.get(doc_class,id)
 
-    def evaluate(self, filters_list, sortingp_list, doc_class):
-        id_list = self.get_id_list(filters_list)
-        if len(sortingp_list) > 0:
-            docs_list = [doc_class.get(self.parse_id(id)) for id in id_list]
-            sorted_list = self.sort(sortingp_list, docs_list, doc_class)
-            for doc in sorted_list:
+    def evaluate(self, filters_list, sortingp_list, all_param, doc_class):
+        if all_param.all and len(sortingp_list) > 0:
+            docs_list = list(self.all(doc_class, skip=all_param.skip, limit=all_param.limit))
+            for doc in self.sort(sortingp_list, docs_list, doc_class):
                 yield doc
+        elif all_param.all:
+            yield self.all(doc_class, skip=all_param.skip, limit=all_param.limit)
         else:
-            for id in id_list:
-                yield doc_class.get(self.parse_id(id))
+            id_list = self.get_id_list(filters_list)
+            if len(sortingp_list) > 0:
+                docs_list = [doc_class.get(self.parse_id(id)) for id in id_list]
+                sorted_list = self.sort(sortingp_list, docs_list, doc_class)
+                for doc in sorted_list:
+                    yield doc
+            else:
+                for id in id_list:
+                    yield doc_class.get(self.parse_id(id))
