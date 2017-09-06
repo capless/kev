@@ -108,7 +108,8 @@ class S3DB(DocDB):
             for doc in self.sort(sortingp_list, docs_list, doc_class):
                 yield doc
         elif all_param.all:
-            yield self.all(doc_class, skip=all_param.skip, limit=all_param.limit)
+            for doc in self.all(doc_class, skip=all_param.skip, limit=all_param.limit):
+                yield doc
         else:
             if len(filters_list) == 1:
                 filter_value = '{}/'.format(filters_list[0])

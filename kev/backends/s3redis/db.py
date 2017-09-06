@@ -77,7 +77,8 @@ class S3RedisDB(RedisDB):
             for doc in self.sort(sortingp_list, docs_list, doc_class):
                 yield doc
         elif all_param.all:
-            yield self.all(doc_class, skip=all_param.skip, limit=all_param.limit)
+            for doc in self.all(doc_class, skip=all_param.skip, limit=all_param.limit):
+                yield doc
         else:
             id_list = self.get_id_list(filters_list)
             if len(sortingp_list) > 0:
