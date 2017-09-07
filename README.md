@@ -1,8 +1,10 @@
 ![alt text](https://s3.amazonaws.com/capless/images/kev-small.png "KEV - Keys, Extra Stuff, and Values")
 
-
 # kev
 K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases based on [**Valley**](https://www.github.com/capless/valley). Currently supported backends are Redis, S3, DynamoDB and a S3/Redis hybrid backend.
+
+## PROJECT UPDATE 
+The DynamoDB and Cloudant backends were moved to [DocB](https://github.com/capless/docb). The Redis, S3, and S3/Redis backend will continue supported here in Kev. We felt the need to split up the key-value stores and document databases.
 
 [![Build Status](https://travis-ci.org/capless/kev.svg?branch=master)](https://travis-ci.org/capless/kev)
 
