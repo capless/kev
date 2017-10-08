@@ -102,16 +102,27 @@ class S3DB(DocDB):
                 doc_obj.get_index_name(prop, index_value),
                 doc_obj._id)).put(Body='')
 
-
-    def evaluate(self, filters_list, doc_class):
-        if len(filters_list) == 1:
-            filter_value = '{}/'.format(filters_list[0])
-
-            id_list = self._indexer.objects.filter(Prefix=filter_value)
-
+    def evaluate(self, filters_list, sortingp_list, all_param, doc_class):
+        if all_param.all and len(sortingp_list) > 0:
+            docs_list = list(self.all(doc_class, skip=all_param.skip, limit=all_param.limit))
+            for doc in self.sort(sortingp_list, docs_list, doc_class):
+                yield doc
+        elif all_param.all:
+            for doc in self.all(doc_class, skip=all_param.skip, limit=all_param.limit):
+                yield doc
         else:
-            raise ValueError('There should only be one filter for S3 backends')
-        for id in id_list:
-
-            index_dict = re.match(self.index_pattern,id.key).groupdict()
-            yield self.get(doc_class,index_dict['doc_id'])
+            if len(filters_list) == 1:
+                filter_value = '{}/'.format(filters_list[0])
+                raw_id_list = self._indexer.objects.filter(Prefix=filter_value)
+                id_list = [re.match(self.index_pattern,id.key).groupdict()['doc_id']\
+                               for id in raw_id_list]
+            else:
+                raise ValueError('There should only be one filter for S3 backends')
+            if len(sortingp_list) > 0:
+                docs_list = [doc_class.get(id) for id in id_list]
+                sorted_list = self.sort(sortingp_list, docs_list, doc_class)
+                for doc in sorted_list:
+                    yield doc
+            else:
+                for id in id_list:
+                    yield self.get(doc_class, id)

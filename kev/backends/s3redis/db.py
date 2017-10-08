@@ -3,6 +3,8 @@ import json
 import redis
 
 from kev.backends.redis.db import RedisDB
+from kev.exceptions import QueryError
+
 
 class S3RedisDB(RedisDB):
 
@@ -56,7 +58,6 @@ class S3RedisDB(RedisDB):
         pipe.execute()
 
     def all(self, doc_class, skip, limit):
-
         id_list = [self.parse_id(id) for id in self._indexer.smembers(
             '{0}:all'.format(
             doc_class.get_class_name()))]
@@ -70,7 +71,21 @@ class S3RedisDB(RedisDB):
                 limit -= 1
             yield self.get(doc_class,id)
 
-    def evaluate(self, filters_list, doc_class):
-        id_list = self.get_id_list(filters_list)
-        for id in id_list:
-            yield doc_class.get(self.parse_id(id))
+    def evaluate(self, filters_list, sortingp_list, all_param, doc_class):
+        if all_param.all and len(sortingp_list) > 0:
+            docs_list = list(self.all(doc_class, skip=all_param.skip, limit=all_param.limit))
+            for doc in self.sort(sortingp_list, docs_list, doc_class):
+                yield doc
+        elif all_param.all:
+            for doc in self.all(doc_class, skip=all_param.skip, limit=all_param.limit):
+                yield doc
+        else:
+            id_list = self.get_id_list(filters_list)
+            if len(sortingp_list) > 0:
+                docs_list = [doc_class.get(self.parse_id(id)) for id in id_list]
+                sorted_list = self.sort(sortingp_list, docs_list, doc_class)
+                for doc in sorted_list:
+                    yield doc
+            else:
+                for id in id_list:
+                    yield doc_class.get(self.parse_id(id))

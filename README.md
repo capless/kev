@@ -119,15 +119,15 @@ ec640abfd6
 ```
 ##### Show all Documents
 ```python
->>>TestDocument.all()
+>>>TestDocument.objects().all()
 
 [<TestDocument: Kev:ec640abfd6>,<TestDocument: George:aff7bcfb56>,<TestDocument: Sally:c38a77cfe4>]
 
->>>TestDocument.all(skip=1)
+>>>TestDocument.objects().all(skip=1)
 
 [<TestDocument: George:aff7bcfb56>,<TestDocument: Sally:c38a77cfe4>]
 
->>>TestDocument.all(limit=2)
+>>>TestDocument.objects().all(limit=2)
 
 [<TestDocument: Kev:ec640abfd6>,<TestDocument: George:aff7bcfb56>]
 
@@ -152,6 +152,18 @@ ec640abfd6
 
 >>>TestDocument.objects().filter({'no_subscriptions':3,'state':'NC'})
 [<TestDocument: Kev:ec640abfd6>]
+```
+
+##### Sort Documents
+```python
+>>>TestDocument.objects().filter({'no_subscriptions':3}).sort_by('name')
+[<TestDocument: George:aff7bcfb56>, <TestDocument: Kev:ec640abfd6>]
+>>>TestDocument.objects().filter({'no_subscriptions':3}).sort_by('name', reverse=True)
+[<TestDocument: Kev:ec640abfd6>, <TestDocument: George:aff7bcfb56>]
+>>>TestDocument.objects().all().sort_by('gpa')
+[<TestDocument: Sally:c38a77cfe4>, <TestDocument: Kev:ec640abfd6>, <TestDocument: George:aff7bcfb56>]
+TestDocument.objects().all().sort_by('name').sort_by('gpa')
+[<TestDocument: Sally:c38a77cfe4>, <TestDocument: George:aff7bcfb56>>, <TestDocument: Kev:ec640abfd6]
 ```
 ##### Chain Filters
 The chain filters feature is only available for Redis and S3/Redis backends.
