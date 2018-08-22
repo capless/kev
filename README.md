@@ -51,12 +51,6 @@ kev_handler = KevHandler({
             'host': 'your-redis-host.com',
             'port': 6379,
         }
-    },
-    'dynamodb': {
-        'backend': 'kev.backends.dynamodb.db.DynamoDB',
-        'connection': {
-            'table': 'your-dynamodb-table',
-        }
     }
 })
 ```
