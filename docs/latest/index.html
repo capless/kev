@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Capless - Kev</title>
+     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css?family=Fredoka+One|Poppins" rel="stylesheet">
+
+    <style type="text/css">
+        h1,h2 {
+            font-family: 'Fredoka One', cursive;
+        }
+        h3,h4 {
+            font-family: 'Poppins', sans-serif;
+        }
+        div.container {
+            background-color: #fff;
+        }
+        body {
+            background-color: #f5f5f5;
+        }
+        img.logo {
+           height: 53px;
+            width:203px;
+        }
+        img.project-logo {
+            margin: 20px auto;
+            height: 250px;
+            display: block;
+        }
+        body pre {
+            background-color: #f5f5f5;
+            padding:30px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+<div class="row"><a href="https://capless.io"><img class="logo" src="https://capless.io/static/images/capless-logo.png"/></a></div>
+    <!--Documentation-->
+
+    <img src="https://capless.io/static/images/kev-logo.png" class="project-logo" alt="Kev">
+
+
+    <p>K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases based on Valley. Currently supported backends are Redis, S3, DynamoDB and a S3/Redis hybrid backend.</p>
+
+    <h2>Python Versions</h2>
+        <p>Kev should work on Python 3.5+ and higher</p>
+
+    <h2>Install</h2>
+        <pre><code>pip install kev</code></pre>
+
+    <h2>Example Project Using KEV</h2>
+
+        <ul>
+            <li><a href="https://github.com/capless/flask-capless-blog">flask-capless-blog</a></li>
+        </ul>
+    <h2>Example Usage</h2>
+
+    <h3>Setup the Connection</h3>
+
+    <h4>Example: loading.py</h4>
+
+        <pre><code>from kev.loading import KevHandler
+
+
+kev_handler = KevHandler({
+    's3':{
+        'backend':'kev.backends.s3.db.S3DB',
+        'connection':{
+            'bucket':'your-bucket-name'
+        }
+    },
+    's3redis':{
+        'backend':'kev.backends.s3redis.db.S3RedisDB',
+        'connection':{
+            'bucket':'your-bucket-name',
+            'indexer':{
+                'host':'your.redis.host.com',
+                'port':6379,
+            }
+        }
+    },
+    'redis': {
+        'backend': 'kev.backends.redis.db.RedisDB',
+        'connection': {
+            'host': 'your-redis-host.com',
+            'port': 6379,
+        }
+    },
+    'dynamodb': {
+        'backend': 'kev.backends.dynamodb.db.DynamoDB',
+        'connection': {
+            'table': 'your-dynamodb-table',
+        }
+    }
+})
+    </pre></code>
+    <h3>Setup the Models</h3>
+
+    <h4>Example: models.py</h4>
+<pre><code>
+from kev import (Document,CharProperty,DateTimeProperty,
+                 DateProperty,BooleanProperty,IntegerProperty,
+                 FloatProperty)
+from .loading import kev_handler
+
+class TestDocument(Document):
+    name = CharProperty(required=True,unique=True,min_length=3,max_length=20)
+    last_updated = DateTimeProperty(auto_now=True)
+    date_created = DateProperty(auto_now_add=True)
+    is_active = BooleanProperty(default_value=True,index=True)
+    city = CharProperty(required=False,max_length=50)
+    state = CharProperty(required=True,index=True,max_length=50)
+    no_subscriptions = IntegerProperty(default_value=1,index=True,min_value=1,max_value=20)
+    gpa = FloatProperty()
+
+    def __unicode__(self):
+        return self.name
+
+
+    class Meta:
+        use_db = 's3redis'
+        handler = kev_handler
+</code></pre>
+
+    <h2>Use the model</h2>
+
+    <h3>How to Save a Document</h3>
+
+    <pre><code>
+>>>from .models import TestDocument
+
+>>>kevin = TestDocument(name='Kev',is_active=True,no_subscriptions=3,state='NC',gpa=3.25)
+
+>>>kevin.save()
+
+>>>kevin.name
+'Kev'
+
+>>>kevin.is_active
+True
+
+>>>kevin.pk
+ec640abfd6
+
+>>>kevin.id
+ec640abfd6
+
+>>>kevin._id
+'ec640abfd6:id:s3redis:testdocument'
+    </code></pre>
+
+    <h2>Query Documents</h2>
+
+    <h3>First Save Some More Docs</h3>
+
+    <pre><code>
+>>>george = TestDocument(name='George',is_active=True,no_subscriptions=3,gpa=3.25,state='VA')
+
+>>>george.save()
+
+>>>sally = TestDocument(name='Sally',is_active=False,no_subscriptions=6,gpa=3.0,state='VA')
+
+>>>sally.save()
+    </code></pre>
+    <h3>Show all Documents</h3>
+<pre><code>
+>>>TestDocument.all()
+
+[<TestDocument: Kev:ec640abfd6>,<TestDocument: George:aff7bcfb56>,<TestDocument: Sally:c38a77cfe4>]
+    </code></pre>
+    <h3>Get One Document</h3>
+
+    <pre><code>
+>>>TestDocument.get('ec640abfd6')
+<TestDocument: Kev:ec640abfd6>
+
+>>>TestDocument.objects().get({'state':'NC'})
+<TestDocument: Kev:ec640abfd6>
+    </code></pre>
+
+    <h3>Filter Documents</h3>
+<pre><code>
+>>>TestDocument.objects().filter({'state':'VA'})
+
+[<TestDocument: George:aff7bcfb56>,<TestDocument: Sally:c38a77cfe4>]
+
+>>>TestDocument.objects().filter({'no_subscriptions':3})
+[<TestDocument: Kev:ec640abfd6>,<TestDocument: George:aff7bcfb56>]
+
+>>>TestDocument.objects().filter({'no_subscriptions':3,'state':'NC'})
+[<TestDocument: Kev:ec640abfd6>]
+</code></pre>
+    <h3>Chain Filters</h3>
+
+    <p>The chain filters feature is only available for Redis and S3/Redis backends.</p>
+<pre><code>
+>>>TestDocument.objects().filter({'no_subscriptions':3}).filter({'state':'NC'})
+[<TestDocument: Kev:ec640abfd6>]
+    </code></pre>
+
+    <h3>Wildcard Filters</h3>
+
+    <p>Wildcard filters currently only work with the Redis and S3/Redis backend. Use prefixes with the S3 backend.</p>
+
+<pre><code>
+    >>>TestDocument.objects().filter({'state':'N*'})
+[<TestDocument: Kev:ec640abfd6>]
+    </code></pre>
+
+    <h3>Prefix Filters</h3>
+
+    <p>Prefix filters currently only work with the S3 backend. Use wildcard filters with the Redis or S3/Redis backends.</p>
+
+    <pre><code>
+>>>TestDocument.objects().filter({'state':'N'})
+[<TestDocument: Kev:ec640abfd6>]
+        </code></pre>
+
+    <h3>DynamoDB setup</h3>
+
+    <h4>Create a table</h4>
+
+<p>Table name should be between 3 and 255 characters long. (A-Z,a-z,0-9,_,-,.)
+    Primary key (partition key) should be equal to _id</p>
+
+    <h3>Filter Documents</h3>
+
+<p>If you want to make filter() queries, you should create an index for every attribute that you want to filter by.
+
+Primary key should be equal to attribute name.
+Index name should be equal to attribute name postfixed by "-index". (It will be filled by AWS automatically). For example, for attribute "city": Primary key = "city" and index name = "city-index".
+Index name can be directly specified by index_name argument:
+    name = CharProperty(required=True,unique=True,min_length=5,max_length=20,index_name='name_index')
+    <b>IMPORTANT:</b> In other words, if your indexed attribute is named city, then your index name should be city-index, if you didn't specify index_name argument.
+    Projected attributes: All.</p>
+
+    <h3>Use DynamoDB locally</h3>
+
+    <p>Run DynamoDB
+        with persistent storage</p>
+
+    <pre><code>docker run -d -p 8000:8000 -v /tmp/data:/data/ dwmkerr/dynamodb -dbPath /data/</code></pre>
+
+    <h3>Configuration</h3>
+
+    <h4>Example: loading.py</h4>
+<pre><code>
+from kev.loading import KevHandler
+
+
+kev_handler = KevHandler({
+    'dynamodb': {
+        'backend': 'kev.backends.dynamodb.db.DynamoDB',
+        'connection': {
+            'table': 'your-dynamodb-table',
+            'endpoint_url': 'http://127.0.0.1:8000'
+        }
+    }
+})
+    </code></pre>
+Testing
+
+Run DynamoDB
+
+in memory (best performance) docker run -d -p 8000:8000 dwmkerr/dynamodb -inMemory
+Create a table for testing.
+<pre><code>
+import boto3
+
+
+table_wcu = 2000
+table_rcu = 2000
+index_wcu = 3000
+index_rcu = 2000
+table_name = 'localtable'
+
+dynamodb = boto3.resource('dynamodb', endpoint_url="http://127.0.0.1:8000")
+dynamodb.create_table(TableName=table_name, KeySchema=[{'AttributeName': '_id', 'KeyType': 'HASH'}],
+                      ProvisionedThroughput={'ReadCapacityUnits': table_rcu,
+                                             'WriteCapacityUnits': table_wcu},
+                      AttributeDefinitions=[{'AttributeName': '_id', 'AttributeType': 'S'},
+                                            {u'AttributeName': u'city', u'AttributeType': u'S'},
+                                            {u'AttributeName': u'email', u'AttributeType': u'S'},
+                                            {u'AttributeName': u'name', u'AttributeType': u'S'},
+                                            {u'AttributeName': u'slug', u'AttributeType': u'S'}],
+                      GlobalSecondaryIndexes=[
+                          {'IndexName': 'city-index', 'Projection': {'ProjectionType': 'ALL'},
+                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
+                                                     'ReadCapacityUnits': index_rcu},
+                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'city'}]},
+                          {'IndexName': 'name-index', 'Projection': {'ProjectionType': 'ALL'},
+                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
+                                                     'ReadCapacityUnits': index_rcu},
+                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'name'}]},
+                          {'IndexName': 'slug-index', 'Projection': {'ProjectionType': 'ALL'},
+                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
+                                                     'ReadCapacityUnits': index_rcu},
+                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'slug'}]},
+                          {'IndexName': 'email-index', 'Projection': {'ProjectionType': 'ALL'},
+                           'ProvisionedThroughput': {'WriteCapacityUnits': index_wcu,
+                                                     'ReadCapacityUnits': index_rcu},
+                           'KeySchema': [{'KeyType': 'HASH', 'AttributeName': 'email'}]}])
+    </code></pre>
+
+    <h3>Setup environment variables.</h3>
+<pre><code>
+export DYNAMO_TABLE_TEST='localtable'
+export DYNAMO_ENDPOINT_URL_TEST='http://127.0.0.1:8000'
+    </code></pre>
+
+    <h3>Backup and Restore</h3>
+
+    <p>Easily backup or restore your model locally or from S3. The backup method creates a JSON file backup.</p>
+
+    <h3>Backup</h3>
+
+    <h4>Local Backup</h4>
+
+<pre><code>TestDocument().backup('test-backup.json')</code></pre>
+    <h3>S3 Backup</h3>
+
+<pre><code>TestDocument().backup('s3://your-bucket/kev/test-backup.json')</code></pre>
+    <h3>Restore</h3>/
+
+    <h4>Local Restore</h4>
+
+<pre><code>TestDocument().restore('test-backup.json')</code></pre>
+
+    <h3>S3 Restore</h3>
+<pre><code>
+TestDocument().restore('s3://your-bucket/kev/test-backup.json')</code></pre>
+
+    <h3>Author</h3>
+
+    <p></p>Twitter::@brianjinwright Github: bjinwright</div>
+</div>
+</body>
+</html>

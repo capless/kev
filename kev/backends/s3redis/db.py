@@ -11,13 +11,14 @@ class S3RedisDB(RedisDB):
     db_class = boto3.resource
     indexer_class = redis.StrictRedis
     backend_id = 's3redis'
-
+    session_kwargs = ['aws_secret_access_key', 'aws_access_key_id', 'endpoint_url']
+    
     def __init__(self,**kwargs):
 
-        if 'aws_secret_access_key' in kwargs and 'aws_access_key_id' in kwargs:
-            boto3.Session(aws_secret_access_key=kwargs['aws_secret_access_key'],
-                aws_access_key_id=kwargs['aws_access_key_id'])
-        self._db = boto3.resource('s3')
+        session_kwargs = {k: v for k, v in kwargs.items() if k in
+                          self.session_kwargs}
+
+        self._db = boto3.resource('s3', **session_kwargs)
         self.bucket = kwargs['bucket']
 
         self._indexer = self.indexer_class(**kwargs['indexer'])

@@ -14,17 +14,14 @@ class S3DB(DocDB):
                     ':indexes:(?P<index_name>[-\w]+):(?P<index_value>' \
                     '[-\W\w\s]+)/(?P<doc_id>[-\w]+):id:' \
                     '(?P<backend_id_b>[-\w]+):(?P<class_name_b>[-\w]+)$'
-    session_kwargs = ['aws_secret_access_key', 'aws_access_key_id',
-                      'endpoint_url']
+    session_kwargs = ['aws_secret_access_key', 'aws_access_key_id','endpoint_url']
 
     def __init__(self,**kwargs):
         #
         session_kwargs = {k: v for k, v in kwargs.items() if k in
                           self.session_kwargs}
-        if len(session_kwargs.keys()) > 0:
-            boto3.Session(**session_kwargs)
 
-        self._db = boto3.resource('s3')
+        self._db = boto3.resource('s3', **session_kwargs)
         self.bucket = kwargs['bucket']
         self._indexer = self._db.Bucket(self.bucket)
 
@@ -96,6 +93,7 @@ class S3DB(DocDB):
     def add_indexes(self, doc_obj, doc):
         index_list = doc_obj.get_indexed_props()
         for prop in index_list:
+            print('Got Here')
             index_value = doc.get(prop)
             # if index_value:
             self._db.Object(self.bucket,'{0}/{1}'.format(

@@ -1,7 +1,9 @@
 from setuptools import setup, find_packages
-from pip.req import parse_requirements
 
-install_reqs = parse_requirements('requirements.txt', session=False)
+def parse_requirements(filename):
+    """ load requirements from a pip requirements file """
+    lineiter = (line.strip() for line in open(filename))
+    return [line for line in lineiter if line and not line.startswith("#")]
 
 version = '0.9.2'
 
@@ -21,7 +23,7 @@ setup(
     version=version,
     description="""K.E.V. (Keys, Extra Stuff, and Values) is a Python \
     ORM for key-value stores and document databases based on Valley. \
-    Currently supported backends are Redis, S3, DynamoDB and a \
+    Currently supported backends are Redis, S3, and a \
     S3/Redis hybrid backend.""",
     long_description=LONG_DESCRIPTION,
     classifiers=[
@@ -36,7 +38,7 @@ setup(
     packages=find_packages(),
     url='https://github.com/capless/kev',
     license='GPLv3',
-    install_requires=[str(ir.req) for ir in install_reqs],
+    install_requires=parse_requirements('requirements.txt'),
     include_package_data=True,
     zip_safe=False,
 )
