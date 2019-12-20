@@ -20,29 +20,21 @@ class S3DB(DocDB):
 
     def __init__(self,**kwargs):
         #
-        session_kwargs = {k: v for k, v in kwargs.items() if k in
-                          self.session_kwargs}
-        endpoint_url = None
-        if 'endpoint_url' in session_kwargs.keys():
-            endpoint_url =  session_kwargs['endpoint_url']   
-            del(session_kwargs['endpoint_url'])
-        signature_version = None
+        session_kwargs = {
+            k: v for k, v in kwargs.items() if k in self.session_kwargs
+        }
         if 'signature_version' in session_kwargs.keys():
             signature_version = session_kwargs['signature_version']
             del(session_kwargs['signature_version'])
-        if len(session_kwargs.keys()) > 0:
-            boto3.Session(**session_kwargs)
-
-        if signature_version is not None:
             self._db = boto3.resource(
                 's3',
-                endpoint_url=endpoint_url,
                 config=boto3.session.Config(
-                   signature_version=signature_version
-                )
+                    signature_version=signature_version
+                ),
+                **session_kwargs
             )
         else:
-            self._db = boto3.resource('s3', endpoint_url=endpoint_url)
+            self._db = boto3.resource('s3', **session_kwargs)
         self.bucket = kwargs['bucket']
         self._indexer = self._db.Bucket(self.bucket)
 
