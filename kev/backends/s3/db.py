@@ -15,16 +15,26 @@ class S3DB(DocDB):
                     '[-\W\w\s]+)/(?P<doc_id>[-\w]+):id:' \
                     '(?P<backend_id_b>[-\w]+):(?P<class_name_b>[-\w]+)$'
     session_kwargs = ['aws_secret_access_key', 'aws_access_key_id',
-                      'endpoint_url']
+                      'region_name', 'endpoint_url', 
+                      'signature_version']
 
     def __init__(self,**kwargs):
         #
-        session_kwargs = {k: v for k, v in kwargs.items() if k in
-                          self.session_kwargs}
-        if len(session_kwargs.keys()) > 0:
-            boto3.Session(**session_kwargs)
-
-        self._db = boto3.resource('s3')
+        session_kwargs = {
+            k: v for k, v in kwargs.items() if k in self.session_kwargs
+        }
+        if 'signature_version' in session_kwargs.keys():
+            signature_version = session_kwargs['signature_version']
+            del(session_kwargs['signature_version'])
+            self._db = boto3.resource(
+                's3',
+                config=boto3.session.Config(
+                    signature_version=signature_version
+                ),
+                **session_kwargs
+            )
+        else:
+            self._db = boto3.resource('s3', **session_kwargs)
         self.bucket = kwargs['bucket']
         self._indexer = self._db.Bucket(self.bucket)
 
