@@ -15,7 +15,7 @@ class S3DB(DocDB):
                     '[-\W\w\s]+)/(?P<doc_id>[-\w]+):id:' \
                     '(?P<backend_id_b>[-\w]+):(?P<class_name_b>[-\w]+)$'
     session_kwargs = ['aws_secret_access_key', 'aws_access_key_id',
-                      'endpoint_url']
+                      'region_name', 'endpoint_url']
 
     def __init__(self,**kwargs):
         #
