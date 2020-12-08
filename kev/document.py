@@ -10,6 +10,12 @@ from valley.schema import BaseSchema
 from .properties import BaseProperty
 from .query import QueryManager
 
+try:
+    import brotli
+    BROTLI_ENABLED = True
+except ImportError:
+    BROTLI_ENABLED = False
+
 
 class DeclaredVars(DV):
     base_field_class = BaseProperty
@@ -173,13 +179,23 @@ class BaseDocument(BaseSchema):
         doc._data.pop('_id')
         return doc
 
-    def backup(self,export_path):
+    def backup(self,export_path, compress= False):
         file_path, path_type, bucket = self.get_path_type(export_path)
         json_docs = [self._db.prep_doc(
             self.remove_id(doc)) for doc in self.all()]
 
+        # Compress using Brotli
+        if compress and BROTLI_ENABLED:
+            json_docs_enc = json.dumps(json_docs).encode('UTF-8')
+            json_docs = brotli.compress(json_docs_enc)
+            if path_type == 'local': # Add Extension
+                export_path += ".brotli"
+            else:
+                file_path += ".brotli"
+            
+
         if path_type == 'local':
-            with open(export_path,'w+') as f:
+            with open(export_path,'wb+') as f:
                 json.dump(json_docs,f)
         else:
             #Use tmp directory if we are uploading to S3 just in case we
