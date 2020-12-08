@@ -155,11 +155,18 @@ class BaseDocument(BaseSchema):
     def get_restore_json(self,restore_path,path_type,bucket=None):
         if path_type == 's3':
             print(bucket,restore_path)
-            return json.loads(self._s3.Object(
-                bucket, restore_path).get().get('Body').read().decode())
+            obj = self._s3.Object(
+                bucket, restore_path).get().get('Body').read().decode()
+            if restore_path.endswith('.brotli'):
+                return  json.load(brotli.decompress(obj)) 
+            else:
+                return json.loads(obj)
         else:
             with open(restore_path) as f:
-                return json.load(f)
+                if restore_path.endswith('.brotli'):
+                    return  json.load(brotli.decompress(f)) 
+                else:
+                    return json.load(f)
 
     def get_path_type(self,path):
         if path.startswith('s3://'):
