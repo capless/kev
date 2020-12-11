@@ -160,7 +160,7 @@ class BaseDocument(BaseSchema):
         else:
             with open(restore_path) as f:
                 obj = f
-                
+
         if restore_path.endswith('.brotli'):
             return  json.load(brotli.decompress(obj)) 
         else:
@@ -184,13 +184,13 @@ class BaseDocument(BaseSchema):
         doc._data.pop('_id')
         return doc
 
-    def backup(self,export_path, use_brolti= False):
+    def backup(self,export_path, use_brotli= False):
         file_path, path_type, bucket = self.get_path_type(export_path)
         json_docs = [self._db.prep_doc(
             self.remove_id(doc)) for doc in self.all()]
 
         # Compress using Brotli
-        if use_brolti and BROTLI_ENABLED:
+        if use_brotli and BROTLI_ENABLED:
             json_docs_enc = json.dumps(json_docs).encode('UTF-8')
             json_docs = brotli.compress(json_docs_enc)
             if path_type == 'local': # Add Extension
