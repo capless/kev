@@ -157,16 +157,14 @@ class BaseDocument(BaseSchema):
             print(bucket,restore_path)
             obj = self._s3.Object(
                 bucket, restore_path).get().get('Body').read().decode()
-            if restore_path.endswith('.brotli'):
-                return  json.load(brotli.decompress(obj)) 
-            else:
-                return json.loads(obj)
         else:
             with open(restore_path) as f:
-                if restore_path.endswith('.brotli'):
-                    return  json.load(brotli.decompress(f)) 
-                else:
-                    return json.load(f)
+                obj = f
+                
+        if restore_path.endswith('.brotli'):
+            return  json.load(brotli.decompress(obj)) 
+        else:
+            return json.loads(obj)
 
     def get_path_type(self,path):
         if path.startswith('s3://'):
@@ -186,13 +184,13 @@ class BaseDocument(BaseSchema):
         doc._data.pop('_id')
         return doc
 
-    def backup(self,export_path, compress= False):
+    def backup(self,export_path, use_brolti= False):
         file_path, path_type, bucket = self.get_path_type(export_path)
         json_docs = [self._db.prep_doc(
             self.remove_id(doc)) for doc in self.all()]
 
         # Compress using Brotli
-        if compress and BROTLI_ENABLED:
+        if use_brolti and BROTLI_ENABLED:
             json_docs_enc = json.dumps(json_docs).encode('UTF-8')
             json_docs = brotli.compress(json_docs_enc)
             if path_type == 'local': # Add Extension
