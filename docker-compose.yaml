@@ -1,0 +1,42 @@
+version: '3.5'
+
+services:
+  web:
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: .
+    expose:
+      - "8029"
+    ports:
+      - 8029:8888
+    volumes:
+      - ./:/code/
+      - ~/.aws/:/root/.aws
+    depends_on:
+      - redis
+      - localstack
+    env_file: .env
+    working_dir: /code/
+    command: /root/.cache/pypoetry/virtualenvs/kev-MATOk_fk-py3.7/bin/jupyter notebook --port=8888 --ip=0.0.0.0 --allow-root
+  redis:
+    image: "redis:alpine"
+    ports:
+      - 6379:6379
+  localstack:
+    container_name: "localstack"
+    image: localstack/localstack
+    ports:
+      - "4566-4599:4566-4599"
+      - "${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
+    environment:
+      - SERVICES=s3,iam
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - PORT_WEB_UI=8080
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
