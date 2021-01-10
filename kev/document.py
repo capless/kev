@@ -35,7 +35,6 @@ class BaseDocument(BaseSchema):
     def __init__(self, **kwargs):
         self._data = self.process_schema_kwargs(kwargs)
         self._db = self.get_db()
-        self._s3_cache = None
         self._create_error_dict = kwargs.get('create_error_dict') or self._create_error_dict
         if self._create_error_dict:
             self._errors = {}
@@ -43,11 +42,8 @@ class BaseDocument(BaseSchema):
             self.set_pk(self._data['_id'])
         self._index_change_list = []
 
-    @property
     def _s3(self):
-        if self._s3_cache is None:
-            self._s3_cache= boto3.resource('s3')
-        return self._s3_cache
+        return boto3.resource('s3', **self.get_restore_kwargs())
 
     def __repr__(self):
         return '<{class_name}: {uni}:{id}>'.format(
@@ -95,7 +91,6 @@ class BaseDocument(BaseSchema):
                 else:
                     raise e
 
-
     def get_indexes(self):
         index_list = []
         for i in self.get_indexed_props():
@@ -107,6 +102,9 @@ class BaseDocument(BaseSchema):
 
     @classmethod
     def get_db(cls):
+        raise NotImplementedError
+
+    def get_restore_kwargs(self):
         raise NotImplementedError
 
     @classmethod
@@ -154,15 +152,14 @@ class BaseDocument(BaseSchema):
 
     def get_restore_json(self,restore_path,path_type,bucket=None):
         if path_type == 's3':
-            print(bucket,restore_path)
-            obj = self._s3.Object(
+            obj = self._s3().Object(
                 bucket, restore_path).get().get('Body').read().decode()
         else:
             with open(restore_path) as f:
-                obj = f
+                obj = f.read()
 
         if restore_path.endswith('.brotli'):
-            return  json.load(brotli.decompress(obj)) 
+            return json.load(brotli.decompress(obj))
         else:
             return json.loads(obj)
 
@@ -184,8 +181,10 @@ class BaseDocument(BaseSchema):
         doc._data.pop('_id')
         return doc
 
-    def backup(self,export_path, use_brotli= False):
+    def backup(self, export_path, use_brotli= False):
+
         file_path, path_type, bucket = self.get_path_type(export_path)
+
         json_docs = [self._db.prep_doc(
             self.remove_id(doc)) for doc in self.all()]
 
@@ -200,12 +199,12 @@ class BaseDocument(BaseSchema):
             
 
         if path_type == 'local':
-            with open(export_path,'wb+') as f:
-                json.dump(json_docs,f)
+            with open(export_path, 'w') as f:
+                json.dump(json_docs, f)
         else:
             #Use tmp directory if we are uploading to S3 just in case we
             #are using Lambda
-            self._s3.Object(bucket, file_path).put(
+            self._s3().Object(bucket, file_path).put(
                 Body=json.dumps(json_docs))
 
     class Meta:
@@ -218,3 +217,6 @@ class Document(BaseDocument,metaclass=DeclarativeVariablesMetaclass):
     @classmethod
     def get_db(cls):
         return cls.Meta.handler.get_db(cls.Meta.use_db)
+
+    def get_restore_kwargs(self):
+        return self.get_db()._kwargs.get('restore')

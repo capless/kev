@@ -13,14 +13,14 @@ class S3RedisDB(RedisDB):
     backend_id = 's3redis'
     session_kwargs = ['aws_secret_access_key', 'aws_access_key_id', 'endpoint_url']
     
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
 
         session_kwargs = {k: v for k, v in kwargs.items() if k in
                           self.session_kwargs}
 
         self._db = boto3.resource('s3', **session_kwargs)
         self.bucket = kwargs['bucket']
-
+        self._kwargs = kwargs
         self._indexer = self.indexer_class(**kwargs['indexer'])
 
     #CRUD Operation Methods

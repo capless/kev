@@ -3,7 +3,7 @@ import boto3
 from kev.loading import KevHandler
 from envs import env
 
-bucket_a = env('S3_BUCKET_TEST_A', 'kevtest')
+bucket_a = env('S3_BUCKET_TEST', 'kevtest')
 bucket_b = env('S3_BUCKET_TEST_B', 'kevtestb')
 
 kev_handler = KevHandler({
@@ -12,6 +12,9 @@ kev_handler = KevHandler({
         'connection': {
             'bucket': bucket_a,
             'endpoint_url': 'http://localstack:4566',
+            'restore': {
+                'endpoint_url': 'http://localstack:4566'
+            },
             'indexer': {
                 'host': env('REDIS_HOST_TEST', 'redis'),
                 'port': env('REDIS_PORT_TEST', 6379, var_type='integer'),
@@ -23,6 +26,9 @@ kev_handler = KevHandler({
         'connection': {
             'bucket': bucket_b,
             'endpoint_url': 'http://localstack:4566',
+            'restore': {
+                'endpoint_url': 'http://localstack:4566'
+            }
         }
     },
     'redis': {
@@ -30,6 +36,9 @@ kev_handler = KevHandler({
         'connection': {
             'host': env('REDIS_HOST_TEST', 'redis'),
             'port': env('REDIS_PORT_TEST', 6379, var_type='integer'),
+            'restore': {
+                'endpoint_url': 'http://localstack:4566'
+            }
         }
     },
 })
@@ -48,13 +57,8 @@ class KevTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        print('Setting up the class')
         s3_client.create_bucket(Bucket=bucket_a)
         s3_client.create_bucket(Bucket=bucket_b)
-
-    @classmethod
-    def teardown_class(cls):
-        print('Tearing down the class')
 
     def tearDown(self):
         for db_label in list(kev_handler._databases.keys()):

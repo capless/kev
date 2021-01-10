@@ -13,13 +13,13 @@ class RedisDB(DocDB):
     def __init__(self, **kwargs):
         self._db = self._indexer = self.db_class(
             kwargs['host'], port=kwargs['port'])
-
+        self._kwargs = kwargs
 
     # CRUD Operations
     def save(self, doc_obj):
         doc_obj, doc = self._save(doc_obj)
         pipe = self._db.pipeline()
-        pipe.hmset(doc_obj._id, doc)
+        pipe.hset(doc_obj._id, mapping=doc)
 
         pipe = self.add_to_model_set(doc_obj, pipe)
         pipe = self.add_indexes(doc_obj, doc, pipe)

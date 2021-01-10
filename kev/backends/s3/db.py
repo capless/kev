@@ -22,6 +22,7 @@ class S3DB(DocDB):
         self._db = boto3.resource('s3', **session_kwargs)
         self.bucket = kwargs['bucket']
         self._indexer = self._db.Bucket(self.bucket)
+        self._kwargs = kwargs
 
     # CRUD Operation Methods
 
