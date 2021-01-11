@@ -34,8 +34,8 @@ jobs:
         # Ignore the failure of a step and avoid terminating the job.
         continue-on-error: true
 
-      - run: docker-compose up --build
+      - run: docker-compose build
 
       # Runs a single command using the runners shell
-      - name: Build image
+      - name: Run Unit Tests
         run: docker-compose run web poetry run python -m unittest
