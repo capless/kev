@@ -28,6 +28,7 @@ jobs:
       - uses: whoan/docker-build-with-cache-action@v5
         with:
           compose_file: docker-compose.yaml
+          push_image_and_stages: false
 
       # Runs a single command using the runners shell
       - name: Build image
