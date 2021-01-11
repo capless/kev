@@ -194,10 +194,6 @@ class PropertiesTestCase(unittest.TestCase):
     def test_boolean_property_validate(self):
         prop = BooleanProperty(required=True)
         with self.assertRaises(ValidationException) as vm:
-            prop.validate(None, 'is_staff')
-        self.assertEqual(str(vm.exception),
-                         'is_staff: This value should be True or False.')
-        with self.assertRaises(ValidationException) as vm:
             prop.validate('brains', 'is_staff')
         self.assertEqual(str(vm.exception),
                          'is_staff: This value should be True or False.')

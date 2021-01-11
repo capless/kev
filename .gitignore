@@ -78,7 +78,7 @@ target/
 celerybeat-schedule
 
 # dotenv
-.env
+# .env
 
 # virtualenv
 venv/
@@ -89,3 +89,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+#Vscode
+.vscode/

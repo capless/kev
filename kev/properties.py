@@ -53,7 +53,9 @@ class FloatProperty(FloatVariableMixin, BaseProperty):
 
 
 class BooleanProperty(BooleanMixin, BaseProperty):
-    pass
+
+    def get_db_value(self, value):
+        return int(value)
 
 
 class DateProperty(DateMixin, BaseProperty):

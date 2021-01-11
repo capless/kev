@@ -1,12 +1,10 @@
 ![alt text](https://s3.amazonaws.com/capless/images/kev-small.png "KEV - Keys, Extra Stuff, and Values")
 
+
 # kev
-K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases based on [**Valley**](https://www.github.com/capless/valley). Currently supported backends are Redis, S3, DynamoDB and a S3/Redis hybrid backend.
+K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases based on [**Valley**](https://www.github.com/capless/valley). Currently supported backends are Redis, S3 and a S3/Redis hybrid backend.
 
-## PROJECT UPDATE 
-The DynamoDB and Cloudant backends were moved to [DocB](https://github.com/capless/docb). The Redis, S3, and S3/Redis backend will continue supported here in Kev. We felt the need to split up the key-value stores and document databases.
-
-[![Build Status](https://travis-ci.org/capless/kev.svg?branch=master)](https://travis-ci.org/capless/kev)
+[![Build Status](https://github.com/capless/kev/workflows/Unittests/badge.svg?branch=master)](https://github.com/capless/kev/actions?query=workflow%3AUnittests+branch%3Amaster)
 
 ## Python Versions
 
@@ -16,6 +14,7 @@ Kev should work on Python 3.5+ and higher
 ```
 pip install kev
 ```
+
 
 ## Example Project Using KEV
 
@@ -51,7 +50,7 @@ kev_handler = KevHandler({
             'host': 'your-redis-host.com',
             'port': 6379,
         }
-    }
+    },
 })
 ```
 ### Setup the Models
@@ -121,9 +120,17 @@ ec640abfd6
 ```
 ##### Show all Documents
 ```python
->>>TestDocument.all()
+>>>TestDocument.objects().all()
 
 [<TestDocument: Kev:ec640abfd6>,<TestDocument: George:aff7bcfb56>,<TestDocument: Sally:c38a77cfe4>]
+
+>>>TestDocument.objects().all(skip=1)
+
+[<TestDocument: George:aff7bcfb56>,<TestDocument: Sally:c38a77cfe4>]
+
+>>>TestDocument.objects().all(limit=2)
+
+[<TestDocument: Kev:ec640abfd6>,<TestDocument: George:aff7bcfb56>]
 
 ```
 ##### Get One Document
@@ -146,6 +153,18 @@ ec640abfd6
 
 >>>TestDocument.objects().filter({'no_subscriptions':3,'state':'NC'})
 [<TestDocument: Kev:ec640abfd6>]
+```
+
+##### Sort Documents
+```python
+>>>TestDocument.objects().filter({'no_subscriptions':3}).sort_by('name')
+[<TestDocument: George:aff7bcfb56>, <TestDocument: Kev:ec640abfd6>]
+>>>TestDocument.objects().filter({'no_subscriptions':3}).sort_by('name', reverse=True)
+[<TestDocument: Kev:ec640abfd6>, <TestDocument: George:aff7bcfb56>]
+>>>TestDocument.objects().all().sort_by('gpa')
+[<TestDocument: Sally:c38a77cfe4>, <TestDocument: Kev:ec640abfd6>, <TestDocument: George:aff7bcfb56>]
+TestDocument.objects().all().sort_by('name').sort_by('gpa')
+[<TestDocument: Sally:c38a77cfe4>, <TestDocument: George:aff7bcfb56>>, <TestDocument: Kev:ec640abfd6]
 ```
 ##### Chain Filters
 The chain filters feature is only available for Redis and S3/Redis backends.

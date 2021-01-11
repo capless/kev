@@ -10,6 +10,12 @@ from valley.schema import BaseSchema
 from .properties import BaseProperty
 from .query import QueryManager
 
+try:
+    import brotli
+    BROTLI_ENABLED = True
+except ImportError:
+    BROTLI_ENABLED = False
+
 
 class DeclaredVars(DV):
     base_field_class = BaseProperty
@@ -29,13 +35,15 @@ class BaseDocument(BaseSchema):
     def __init__(self, **kwargs):
         self._data = self.process_schema_kwargs(kwargs)
         self._db = self.get_db()
-        self._s3 = boto3.resource('s3')
         self._create_error_dict = kwargs.get('create_error_dict') or self._create_error_dict
         if self._create_error_dict:
             self._errors = {}
         if '_id' in self._data:
             self.set_pk(self._data['_id'])
         self._index_change_list = []
+
+    def _s3(self):
+        return boto3.resource('s3', **self.get_restore_kwargs())
 
     def __repr__(self):
         return '<{class_name}: {uni}:{id}>'.format(
@@ -83,7 +91,6 @@ class BaseDocument(BaseSchema):
                 else:
                     raise e
 
-
     def get_indexes(self):
         index_list = []
         for i in self.get_indexed_props():
@@ -97,6 +104,9 @@ class BaseDocument(BaseSchema):
     def get_db(cls):
         raise NotImplementedError
 
+    def get_restore_kwargs(self):
+        raise NotImplementedError
+
     @classmethod
     def objects(cls):
         return QueryManager(cls)
@@ -108,7 +118,7 @@ class BaseDocument(BaseSchema):
 
     @classmethod
     def get_index_name(cls, prop, index_value):
-        if cls.get_db().backend_id != 'dynamodb':
+        if cls.get_db().backend_id != 'dynamodb' and cls.get_db().backend_id != 'cloudant':
             if isinstance(index_value,str):
                 index_value = index_value.lower()
         return '{0}:{1}:indexes:{2}:{3}'.format(
@@ -124,8 +134,12 @@ class BaseDocument(BaseSchema):
         return cls.get_db().get(cls, doc_id)
 
     @classmethod
-    def all(cls):
-        return cls.get_db().all(cls)
+    def all(cls, skip=None, limit=None):
+        if skip and skip < 0:
+            raise AttributeError("skip value should be an positive integer")
+        if limit is not None and limit < 1:
+            raise AttributeError("limit value should be an positive integer, valid range 1-inf")
+        return cls.get_db().all(cls, skip, limit)
 
     def flush_db(self):
         self._db.flush_db()
@@ -138,12 +152,16 @@ class BaseDocument(BaseSchema):
 
     def get_restore_json(self,restore_path,path_type,bucket=None):
         if path_type == 's3':
-            print(bucket,restore_path)
-            return json.loads(self._s3.Object(
-                bucket, restore_path).get().get('Body').read().decode())
+            obj = self._s3().Object(
+                bucket, restore_path).get().get('Body').read().decode()
         else:
             with open(restore_path) as f:
-                return json.load(f)
+                obj = f.read()
+
+        if restore_path.endswith('.brotli'):
+            return json.load(brotli.decompress(obj))
+        else:
+            return json.loads(obj)
 
     def get_path_type(self,path):
         if path.startswith('s3://'):
@@ -163,18 +181,30 @@ class BaseDocument(BaseSchema):
         doc._data.pop('_id')
         return doc
 
-    def backup(self,export_path):
+    def backup(self, export_path, use_brotli= False):
+
         file_path, path_type, bucket = self.get_path_type(export_path)
+
         json_docs = [self._db.prep_doc(
             self.remove_id(doc)) for doc in self.all()]
 
+        # Compress using Brotli
+        if use_brotli and BROTLI_ENABLED:
+            json_docs_enc = json.dumps(json_docs).encode('UTF-8')
+            json_docs = brotli.compress(json_docs_enc)
+            if path_type == 'local': # Add Extension
+                export_path += ".brotli"
+            else:
+                file_path += ".brotli"
+            
+
         if path_type == 'local':
-            with open(export_path,'w+') as f:
-                json.dump(json_docs,f)
+            with open(export_path, 'w') as f:
+                json.dump(json_docs, f)
         else:
             #Use tmp directory if we are uploading to S3 just in case we
             #are using Lambda
-            self._s3.Object(bucket, file_path).put(
+            self._s3().Object(bucket, file_path).put(
                 Body=json.dumps(json_docs))
 
     class Meta:
@@ -187,3 +217,6 @@ class Document(BaseDocument,metaclass=DeclarativeVariablesMetaclass):
     @classmethod
     def get_db(cls):
         return cls.Meta.handler.get_db(cls.Meta.use_db)
+
+    def get_restore_kwargs(self):
+        return self.get_db()._kwargs.get('restore')

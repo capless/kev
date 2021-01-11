@@ -5,6 +5,7 @@ import datetime
 
 from valley.exceptions import ValidationException
 from kev.utils import get_doc_type
+from kev.query import SortingParam
 
 
 class DocDB(object):
@@ -96,3 +97,18 @@ class DocDB(object):
             return filters
 
         return list(s)
+
+    def sort(self, sortingp_list, docs_list, doc_class):
+        for sortingp in sortingp_list:
+            if sortingp.key not in doc_class._base_properties:
+                raise ValueError("Field '%s' doesn't exists in a document" % sortingp.key)
+        sorted_list = list(docs_list)
+        # check if a list can be sorted by serveral attributes with one function call
+        if SortingParam.needs_multiple_passes(sortingp_list):
+            for sortingp in sortingp_list:
+                sorted_list = sorted(sorted_list, key=lambda x: getattr(x, sortingp.key),
+                                     reverse=sortingp.reverse)
+        else:
+            sorted_list = sorted(sorted_list, key=SortingParam.attr_sort(sortingp_list),
+                                 reverse=sortingp_list[0].reverse)
+        return sorted_list
