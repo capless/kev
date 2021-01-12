@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kev"
-version = "0.9.2"
+version = "0.10.0"
 description = "K.E.V. (Keys, Extra Stuff, and Values) is a Python ORM for key-value stores and document databases based on Valley. Currently supported backends are Redis, S3 and a S3/Redis hybrid backend."
 authors = ["Brian Jinwright <brian@ipoots.com>"]
 license = "Apache License 2.0"
