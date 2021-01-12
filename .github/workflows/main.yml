@@ -39,3 +39,7 @@ jobs:
       # Runs a single command using the runners shell
       - name: Run Unit Tests
         run: docker-compose run web poetry run python -m unittest
+
+      - name: Publish to PyPi
+        if: github.ref == 'refs/heads/master'
+        run: poetry build && poetry publish --username=${{ secrets.PYPI_USERNAME }} --password=${{ secrets.PYPI_PASSWORD }}
