@@ -26,7 +26,7 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-
+      - run: touch .env
       - run: docker-compose pull
 
       # In this step, this action saves a list of existing images,
@@ -41,7 +41,9 @@ jobs:
       # Runs a single command using the runners shell
       - name: Run Unit Tests
         run: docker-compose run web poetry run python -m unittest
-
-      - name: Publish to PyPi
+      - name: Build and publish to pypi
         if: github.ref == 'refs/heads/master'
-        run: poetry build && poetry publish --username=${{ secrets.PYPI_USERNAME }} --password=${{ secrets.PYPI_PASSWORD }}
+        uses: JRubics/poetry-publish@v1.13
+        with:
+          pypi_token: ${{ secrets.PYPI_TOKEN }}
+          ignore_dev_requirements: "yes"
